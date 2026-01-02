@@ -66,7 +66,7 @@ export default function CreateRemittance() {
 
   const canProceed = () => {
     switch (step) {
-      case 0: return phone.length >= 10;
+      case 0: return phone.length >= 9;
       case 1: return Number(totalAmount) >= 10;
       case 2: return totalAllocated > 0 && remaining >= 0;
       case 3: return true;
