@@ -1,12 +1,19 @@
 import { ArrowLeftRight, Send, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useRole } from '@/hooks/useRole';
-import { cn } from '@/lib/utils';
 
 export function Header() {
-  const { role, toggleRole } = useRole();
+  const navigate = useNavigate();
+  const { role, setRole } = useRole();
 
   if (!role) return null;
+
+  const handleToggle = () => {
+    const newRole = role === 'sender' ? 'recipient' : 'sender';
+    setRole(newRole);
+    navigate(newRole === 'sender' ? '/sender' : '/recipient');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
@@ -30,7 +37,7 @@ export function Header() {
         <Button
           variant="outline"
           size="sm"
-          onClick={toggleRole}
+          onClick={handleToggle}
           className="gap-2"
         >
           <ArrowLeftRight className="w-4 h-4" />
