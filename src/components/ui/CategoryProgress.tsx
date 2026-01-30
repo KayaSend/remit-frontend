@@ -36,19 +36,19 @@ export function CategoryProgress({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CategoryIcon category={category} size={16} />
-          <span className="text-sm font-medium">{CATEGORY_LABELS[category]}</span>
+          <span className="text-small font-medium text-foreground">{CATEGORY_LABELS[category]}</span>
         </div>
         {showDetails && (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-small text-muted-foreground">
             ${remaining.toFixed(2)} left
           </span>
         )}
       </div>
       
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
+      <div className="progress-bar">
         <div
           className={cn(
-            'h-full rounded-full transition-all duration-500',
+            'progress-bar-fill',
             progressColorMap[category]
           )}
           style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -56,7 +56,7 @@ export function CategoryProgress({
       </div>
 
       {showDetails && dailyLimit && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-smaller text-muted-foreground">
           Daily limit: ${dailyLimit.toFixed(2)}
         </p>
       )}

@@ -11,14 +11,21 @@ export default {
       screens: {
         sm: "640px",
         md: "768px",
-        lg: "1024px",
-        xl: "1280px",
-        "2xl": "1400px",
+        lg: "968px",
+        xl: "968px",
+        "2xl": "968px",
       },
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        'h2': ['1.25rem', { lineHeight: '1.4', fontWeight: '600' }],
+        'h3': ['1rem', { lineHeight: '1.4', fontWeight: '600' }],
+        'normal': ['0.938rem', { lineHeight: '1.5' }],
+        'small': ['0.813rem', { lineHeight: '1.5' }],
+        'smaller': ['0.75rem', { lineHeight: '1.4' }],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -88,6 +95,13 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1rem",
+        "2xl": "1.5rem",
+      },
+      boxShadow: {
+        'elevated': '0 8px 24px hsla(160, 70%, 45%, 0.08)',
+        'elevated-hover': '0 12px 32px hsla(160, 70%, 45%, 0.12)',
+        'primary': '0 8px 24px hsla(160, 70%, 45%, 0.25)',
       },
       keyframes: {
         "accordion-down": {

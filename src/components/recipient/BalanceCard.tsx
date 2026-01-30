@@ -9,55 +9,87 @@ interface BalanceCardProps {
   onClick?: () => void;
 }
 
+const categoryColorMap: Record<string, string> = {
+  electricity: 'bg-category-electricity',
+  water: 'bg-category-water',
+  rent: 'bg-category-rent',
+  school: 'bg-category-school',
+  food: 'bg-category-food',
+};
+
 export function BalanceCard({ balance, onClick }: BalanceCardProps) {
   const dailyRemaining = balance.dailyLimitKES 
     ? balance.dailyLimitKES - balance.dailySpentKES 
     : null;
+  
+  const dailyPercentUsed = balance.dailyLimitKES 
+    ? (balance.dailySpentKES / balance.dailyLimitKES) * 100 
+    : 0;
 
   return (
     <Card 
       className={cn(
-        'card-elevated hover:shadow-md transition-all cursor-pointer animate-fade-in',
+        'card-elevated transition-all duration-300 cursor-pointer animate-fade-in overflow-hidden',
         !balance.isActive && 'opacity-60'
       )}
       onClick={onClick}
     >
+      {/* Category color accent bar */}
+      <div className={cn('h-1', categoryColorMap[balance.category])} />
+      
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
-            <CategoryIcon category={balance.category} size={20} />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+              <CategoryIcon category={balance.category} size={20} />
+            </div>
+            <div>
+              <h3 className="font-medium text-foreground">
+                {CATEGORY_LABELS[balance.category]}
+              </h3>
+              {!balance.isActive && (
+                <span className="text-smaller px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
+                  Inactive
+                </span>
+              )}
+            </div>
           </div>
-          {!balance.isActive && (
-            <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
-              Inactive
+        </div>
+
+        {/* Balance amounts */}
+        <div className="mb-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold text-foreground">
+              KES {balance.availableKES.toLocaleString()}
             </span>
-          )}
+          </div>
+          <p className="text-smaller text-muted-foreground">
+            ≈ ${balance.availableUSD.toFixed(2)} USD available
+          </p>
         </div>
 
-        <h3 className="font-medium text-foreground mb-1">
-          {CATEGORY_LABELS[balance.category]}
-        </h3>
-
-        <div className="flex items-baseline gap-1 mb-2">
-          <span className="text-2xl font-bold text-foreground">
-            KES {balance.availableKES.toLocaleString()}
-          </span>
-        </div>
-
-        <p className="text-sm text-muted-foreground">
-          ≈ ${balance.availableUSD.toFixed(2)} USD
-        </p>
-
+        {/* Daily limit section */}
         {dailyRemaining !== null && (
-          <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Today's limit:</span>
+          <div className="bg-secondary/50 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-smaller text-muted-foreground">Today's limit</span>
               <span className={cn(
-                'font-medium',
+                'text-small font-medium',
                 dailyRemaining <= 0 ? 'text-destructive' : 'text-foreground'
               )}>
                 KES {dailyRemaining.toLocaleString()} left
               </span>
+            </div>
+            {/* Progress bar for daily limit */}
+            <div className="progress-bar h-1.5">
+              <div 
+                className={cn(
+                  'progress-bar-fill',
+                  dailyPercentUsed > 90 ? 'bg-destructive' : 
+                  dailyPercentUsed > 70 ? 'bg-warning' : 'bg-primary'
+                )}
+                style={{ width: `${Math.min(dailyPercentUsed, 100)}%` }}
+              />
             </div>
           </div>
         )}
