@@ -4,16 +4,17 @@ import { MobileNav } from './MobileNav';
 
 interface AppLayoutProps {
   children: ReactNode;
+  hideNav?: boolean;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, hideNav = false }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pb-20">
+      <main className={hideNav ? '' : 'pb-24'}>
         {children}
       </main>
-      <MobileNav />
+      {!hideNav && <MobileNav />}
     </div>
   );
 }

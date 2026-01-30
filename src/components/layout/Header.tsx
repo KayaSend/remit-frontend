@@ -16,10 +16,10 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
+    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-primary">
             {role === 'sender' ? (
               <Send className="w-5 h-5 text-primary-foreground" />
             ) : (
@@ -28,7 +28,7 @@ export function Header() {
           </div>
           <div>
             <h1 className="font-semibold text-foreground">Remit</h1>
-            <p className="text-xs text-muted-foreground capitalize">
+            <p className="text-smaller text-muted-foreground capitalize">
               {role === 'sender' ? 'Sending Money' : 'Receiving Money'}
             </p>
           </div>
@@ -38,7 +38,7 @@ export function Header() {
           variant="outline"
           size="sm"
           onClick={handleToggle}
-          className="gap-2"
+          className="gap-2 touch-target"
         >
           <ArrowLeftRight className="w-4 h-4" />
           <span className="hidden sm:inline">Switch to {role === 'sender' ? 'Recipient' : 'Sender'}</span>

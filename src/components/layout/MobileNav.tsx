@@ -1,4 +1,4 @@
-import { Home, PlusCircle, History, Settings } from 'lucide-react';
+import { Home, PlusCircle, History } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useRole } from '@/hooks/useRole';
@@ -24,7 +24,7 @@ export function MobileNav() {
   const navItems = role === 'sender' ? senderNav : recipientNav;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe-bottom">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || 
@@ -35,14 +35,14 @@ export function MobileNav() {
               key={item.path}
               to={item.path}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg transition-colors touch-target',
+                'flex flex-col items-center justify-center gap-1 px-6 py-2 rounded-xl transition-all touch-target',
                 isActive 
                   ? 'text-primary' 
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="text-xs font-medium">{item.label}</span>
+              <item.icon className={cn('w-5 h-5', isActive && 'drop-shadow-sm')} />
+              <span className="text-smaller font-medium">{item.label}</span>
             </Link>
           );
         })}

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 const accountLabels: Record<Category, string> = {
   electricity: 'Meter Number',
   water: 'Account Number',
-  rent: 'Landlord Reference',
+  rent: 'Landlord M-Pesa',
   school: 'Student ID / Ref',
   food: 'Store Account',
 };
@@ -22,9 +22,17 @@ const accountLabels: Record<Category, string> = {
 const accountPlaceholders: Record<Category, string> = {
   electricity: 'e.g., 12345678901',
   water: 'e.g., 987654321',
-  rent: 'e.g., APT-123',
+  rent: 'e.g., 0712345678',
   school: 'e.g., STU-2024-001',
   food: 'e.g., NAIVAS-001',
+};
+
+const categoryColorMap: Record<Category, string> = {
+  electricity: 'bg-category-electricity',
+  water: 'bg-category-water',
+  rent: 'bg-category-rent',
+  school: 'bg-category-school',
+  food: 'bg-category-food',
 };
 
 export default function RequestPayment() {
@@ -71,20 +79,21 @@ export default function RequestPayment() {
   const steps = ['Category', 'Amount', 'Account', 'Confirm'];
 
   return (
-    <AppLayout>
-      <div className="container px-4 py-6">
+    <AppLayout hideNav>
+      <div className="container px-4 py-6 pb-32">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => step > 0 ? setStep(step - 1) : navigate('/recipient')}
+            className="touch-target"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Request Payment</h1>
-            <p className="text-sm text-muted-foreground">Step {step + 1} of {steps.length}</p>
+            <h1 className="text-h3 text-foreground">Request Payment</h1>
+            <p className="text-smaller text-muted-foreground">Step {step + 1} of {steps.length}: {steps[step]}</p>
           </div>
         </div>
 
@@ -94,7 +103,7 @@ export default function RequestPayment() {
             <div
               key={i}
               className={cn(
-                'h-1 flex-1 rounded-full transition-colors',
+                'h-1.5 flex-1 rounded-full transition-all duration-300',
                 i <= step ? 'bg-primary' : 'bg-muted'
               )}
             />
@@ -107,8 +116,8 @@ export default function RequestPayment() {
           {step === 0 && (
             <div className="space-y-4 animate-fade-in">
               <div className="text-center mb-6">
-                <h2 className="text-lg font-semibold text-foreground">What bill do you want to pay?</h2>
-                <p className="text-sm text-muted-foreground">Select a category</p>
+                <h2 className="text-h2 text-foreground mb-2">What bill do you want to pay?</h2>
+                <p className="text-small text-muted-foreground">Select a category below</p>
               </div>
 
               <div className="grid gap-3">
@@ -116,36 +125,38 @@ export default function RequestPayment() {
                   <Card
                     key={balance.category}
                     className={cn(
-                      'cursor-pointer transition-all',
+                      'cursor-pointer transition-all duration-300 overflow-hidden',
                       selectedCategory === balance.category
-                        ? 'ring-2 ring-primary bg-accent'
+                        ? 'ring-2 ring-primary bg-accent border-primary'
                         : 'hover:bg-muted/50'
                     )}
                     onClick={() => setSelectedCategory(balance.category)}
                   >
+                    {/* Category color bar */}
+                    <div className={cn('h-1', categoryColorMap[balance.category])} />
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
-                            <CategoryIcon category={balance.category} size={20} />
+                          <div className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center">
+                            <CategoryIcon category={balance.category} size={22} />
                           </div>
                           <div>
                             <p className="font-medium text-foreground">
                               {CATEGORY_LABELS[balance.category]}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-smaller text-muted-foreground">
                               KES {balance.availableKES.toLocaleString()} available
                             </p>
                           </div>
                         </div>
                         <div className={cn(
-                          'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                          'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all',
                           selectedCategory === balance.category 
                             ? 'bg-primary border-primary' 
                             : 'border-muted-foreground'
                         )}>
                           {selectedCategory === balance.category && (
-                            <Check className="w-3 h-3 text-primary-foreground" />
+                            <Check className="w-3.5 h-3.5 text-primary-foreground" />
                           )}
                         </div>
                       </div>
@@ -160,51 +171,66 @@ export default function RequestPayment() {
           {step === 1 && selectedBalance && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-6">
-                <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
-                  <CategoryIcon category={selectedCategory!} size={24} />
+                <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
+                  <CategoryIcon category={selectedCategory!} size={28} />
                 </div>
-                <h2 className="text-lg font-semibold text-foreground">How much?</h2>
-                <p className="text-sm text-muted-foreground">
-                  Available: KES {selectedBalance.availableKES.toLocaleString()}
+                <h2 className="text-h2 text-foreground mb-2">How much?</h2>
+                <p className="text-small text-muted-foreground">
+                  Available: <strong>KES {selectedBalance.availableKES.toLocaleString()}</strong>
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (KES)</Label>
+              <div className="space-y-3">
+                <Label htmlFor="amount" className="text-small font-medium">Amount (KES)</Label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">KES</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-muted-foreground font-medium">KES</span>
                   <Input
                     id="amount"
                     type="number"
                     placeholder="0"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="pl-14 text-2xl h-14"
+                    className="pl-16 text-3xl h-16 font-semibold"
                   />
                 </div>
 
-                {amountNum > 0 && (
-                  <p className="text-sm text-muted-foreground text-center mt-2">
-                    ≈ ${(amountNum / USD_TO_KES).toFixed(2)} USD
-                  </p>
+                {amountNum > 0 && !exceedsDaily && !exceedsTotal && (
+                  <div className="bg-accent/50 rounded-xl p-4 mt-4">
+                    <p className="text-small text-accent-foreground text-center">
+                      ≈ <strong>${(amountNum / USD_TO_KES).toFixed(2)} USD</strong>
+                    </p>
+                  </div>
                 )}
 
                 {dailyRemaining !== null && (
                   <div className={cn(
-                    'flex items-center gap-2 mt-4 p-3 rounded-lg',
-                    exceedsDaily ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
+                    'flex items-start gap-3 mt-4 p-4 rounded-xl',
+                    exceedsDaily ? 'bg-destructive/10' : 'bg-muted'
                   )}>
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">
-                      Daily limit: KES {dailyRemaining.toLocaleString()} remaining today
-                    </span>
+                    <AlertCircle className={cn(
+                      'w-5 h-5 flex-shrink-0 mt-0.5',
+                      exceedsDaily ? 'text-destructive' : 'text-muted-foreground'
+                    )} />
+                    <div>
+                      <p className={cn(
+                        'text-small font-medium',
+                        exceedsDaily ? 'text-destructive' : 'text-foreground'
+                      )}>
+                        Daily limit: KES {dailyRemaining.toLocaleString()} remaining
+                      </p>
+                      <p className="text-smaller text-muted-foreground mt-0.5">
+                        Your sender set this limit for this category
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 {exceedsTotal && (
-                  <div className="flex items-center gap-2 mt-2 p-3 rounded-lg bg-destructive/10 text-destructive">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Amount exceeds available balance</span>
+                  <div className="flex items-start gap-3 mt-2 p-4 rounded-xl bg-destructive/10">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-destructive" />
+                    <p className="text-small text-destructive font-medium">
+                      Amount exceeds available balance
+                    </p>
                   </div>
                 )}
               </div>
@@ -215,24 +241,32 @@ export default function RequestPayment() {
           {step === 2 && selectedCategory && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-6">
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-h2 text-foreground mb-2">
                   Enter {accountLabels[selectedCategory]}
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  We'll pay this bill directly
+                <p className="text-small text-muted-foreground">
+                  We'll pay this bill directly via M-Pesa
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="account">{accountLabels[selectedCategory]}</Label>
+              <div className="space-y-3">
+                <Label htmlFor="account" className="text-small font-medium">
+                  {accountLabels[selectedCategory]}
+                </Label>
                 <Input
                   id="account"
                   type="text"
                   placeholder={accountPlaceholders[selectedCategory]}
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  className="h-12 text-lg"
+                  className="h-14 text-lg"
                 />
+              </div>
+
+              <div className="info-box mt-6">
+                <p className="text-small text-center">
+                  Double-check the account number. We'll verify it before sending payment.
+                </p>
               </div>
             </div>
           )}
@@ -241,36 +275,45 @@ export default function RequestPayment() {
           {step === 3 && selectedCategory && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-success" />
                 </div>
-                <h2 className="text-lg font-semibold text-foreground">Confirm Payment Request</h2>
+                <h2 className="text-h2 text-foreground mb-2">Confirm Payment Request</h2>
               </div>
 
-              <Card className="card-elevated">
-                <CardContent className="p-4 space-y-4">
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="font-medium flex items-center gap-2">
-                      <CategoryIcon category={selectedCategory} size={16} />
-                      {CATEGORY_LABELS[selectedCategory]}
-                    </span>
+              <Card className="card-elevated overflow-hidden">
+                <div className={cn('h-1.5', categoryColorMap[selectedCategory])} />
+                <CardContent className="p-0">
+                  <div className="p-4 border-b border-border">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Category</span>
+                      <span className="font-medium flex items-center gap-2">
+                        <CategoryIcon category={selectedCategory} size={18} />
+                        {CATEGORY_LABELS[selectedCategory]}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Amount</span>
-                    <span className="font-medium">KES {amountNum.toLocaleString()}</span>
+                  <div className="p-4 border-b border-border bg-primary/5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="text-xl font-semibold text-primary">KES {amountNum.toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">{accountLabels[selectedCategory]}</span>
-                    <span className="font-medium">{accountNumber}</span>
+                  <div className="p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{accountLabels[selectedCategory]}</span>
+                      <span className="font-medium font-mono">{accountNumber}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="bg-accent/50 rounded-xl p-4">
-                <p className="text-sm text-accent-foreground text-center">
-                  <strong>We will pay this bill for you.</strong><br />
-                  The payment will be sent directly to the provider via M-Pesa.
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 text-center">
+                <p className="text-foreground font-medium mb-1">
+                  We will pay this bill for you
+                </p>
+                <p className="text-small text-muted-foreground">
+                  The payment will be sent directly to the provider via M-Pesa. You will receive confirmation.
                 </p>
               </div>
             </div>
@@ -278,9 +321,9 @@ export default function RequestPayment() {
         </div>
 
         {/* Footer Actions */}
-        <div className="fixed bottom-20 left-0 right-0 p-4 bg-background border-t border-border">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border">
           <Button 
-            className="w-full h-12 text-base"
+            className="w-full h-14 text-base shadow-primary"
             disabled={!canProceed() || isSubmitting}
             onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
           >
@@ -289,10 +332,13 @@ export default function RequestPayment() {
             ) : step < 3 ? (
               <>
                 Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-2" />
               </>
             ) : (
-              'Submit Request'
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Submit Request
+              </>
             )}
           </Button>
         </div>

@@ -1,58 +1,77 @@
+/*=============== GOOGLE FONTS ===============*/
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
+/*=============== VARIABLES CSS ===============*/
 @layer base {
   :root {
-    /* Trust-focused green palette */
-    --background: 40 20% 98%;
-    --foreground: 160 10% 15%;
+    /*========== Colors ==========*/
+    /* Color mode HSL(hue, saturation, lightness) */
+    /* Trust green hue for fintech/mobile money feel */
+    --hue: 160;
+    --sat: 70%;
+    --lig: 45%;
+    
+    --first-color: hsl(var(--hue), var(--sat), var(--lig));
+    --first-color-alt: hsl(var(--hue), var(--sat), 41%);
+    --title-color: hsl(var(--hue), 12%, 15%);
+    --text-color: hsl(var(--hue), 12%, 45%);
+    --text-color-light: hsl(var(--hue), 8%, 75%);
+    --text-color-lighten: hsl(var(--hue), 8%, 92%);
+    --body-color: hsl(var(--hue), 100%, 99%);
+    --container-color: hsl(0, 0%, 100%);
+
+    /* Semantic tokens */
+    --background: var(--hue) 100% 99%;
+    --foreground: var(--hue) 12% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 160 10% 15%;
+    --card-foreground: var(--hue) 12% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 160 10% 15%;
+    --popover-foreground: var(--hue) 12% 15%;
 
-    /* Emerald green - trust & money */
-    --primary: 160 84% 39%;
+    /* Primary - Trust green */
+    --primary: var(--hue) var(--sat) var(--lig);
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 20% 94%;
-    --secondary-foreground: 160 10% 25%;
+    --secondary: var(--hue) 8% 92%;
+    --secondary-foreground: var(--hue) 12% 25%;
 
-    --muted: 40 15% 92%;
-    --muted-foreground: 160 5% 45%;
+    --muted: var(--hue) 15% 92%;
+    --muted-foreground: var(--hue) 12% 45%;
 
-    --accent: 160 60% 95%;
-    --accent-foreground: 160 84% 30%;
+    --accent: var(--hue) 60% 95%;
+    --accent-foreground: var(--hue) 70% 35%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     /* Status colors */
-    --success: 160 84% 39%;
+    --success: var(--hue) var(--sat) var(--lig);
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --pending: 220 70% 55%;
+    --warning-foreground: 38 92% 15%;
+    --pending: 207 90% 61%;
     --pending-foreground: 0 0% 100%;
 
-    --border: 40 15% 88%;
-    --input: 40 15% 88%;
-    --ring: 160 84% 39%;
+    --border: var(--hue) 15% 88%;
+    --input: var(--hue) 15% 88%;
+    --ring: var(--hue) var(--sat) var(--lig);
 
     --radius: 0.75rem;
 
-    /* Category colors */
+    /* Category colors - utility focused */
     --category-electricity: 38 92% 50%;
     --category-water: 200 80% 50%;
     --category-rent: 280 60% 55%;
-    --category-school: 160 84% 39%;
+    --category-school: var(--hue) var(--sat) var(--lig);
     --category-food: 15 80% 55%;
 
+    /* Sidebar tokens */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -63,34 +82,37 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /*========== Dark theme ==========*/
   .dark {
-    --background: 160 10% 10%;
-    --foreground: 40 20% 98%;
+    --title-color: hsl(var(--hue), 12%, 95%);
+    --text-color: hsl(var(--hue), 12%, 75%);
+    --body-color: hsl(var(--hue), 40%, 8%);
+    --container-color: hsl(var(--hue), 24%, 12%);
 
-    --card: 160 10% 12%;
-    --card-foreground: 40 20% 98%;
+    --background: var(--hue) 40% 8%;
+    --foreground: var(--hue) 12% 95%;
 
-    --popover: 160 10% 12%;
-    --popover-foreground: 40 20% 98%;
+    --card: var(--hue) 24% 12%;
+    --card-foreground: var(--hue) 12% 95%;
 
-    --primary: 160 70% 45%;
+    --popover: var(--hue) 24% 12%;
+    --popover-foreground: var(--hue) 12% 95%;
+
+    --primary: var(--hue) 70% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 10% 18%;
-    --secondary-foreground: 40 20% 90%;
+    --secondary: var(--hue) 20% 18%;
+    --secondary-foreground: var(--hue) 12% 90%;
 
-    --muted: 160 10% 20%;
-    --muted-foreground: 40 10% 60%;
+    --muted: var(--hue) 20% 20%;
+    --muted-foreground: var(--hue) 10% 60%;
 
-    --accent: 160 50% 20%;
-    --accent-foreground: 160 70% 70%;
+    --accent: var(--hue) 50% 20%;
+    --accent-foreground: var(--hue) 70% 70%;
 
-    --destructive: 0 62.8% 40%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 160 10% 20%;
-    --input: 160 10% 20%;
-    --ring: 160 70% 45%;
+    --border: var(--hue) 20% 20%;
+    --input: var(--hue) 20% 20%;
+    --ring: var(--hue) 70% 50%;
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -101,35 +123,158 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .dark .button__gray {
+    background-color: var(--container-color);
+  }
+  
+  .dark .button__gray:hover {
+    background-color: hsl(var(--hue), 24%, 16%);
+  }
 }
 
+/*=============== BASE ===============*/
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.938rem;
+    transition: 0.3s;
+  }
+
+  h1, h2, h3 {
+    @apply text-foreground font-semibold;
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
   }
 }
 
+/*=============== TYPOGRAPHY SCALE ===============*/
 @layer utilities {
+  .text-h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  .text-h3 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .text-small {
+    font-size: 0.813rem;
+  }
+  
+  .text-smaller {
+    font-size: 0.75rem;
+  }
+
   .text-balance {
     text-wrap: balance;
   }
 }
 
-/* Custom component styles */
+@media screen and (min-width: 968px) {
+  body {
+    font-size: 1rem;
+  }
+  
+  .text-h2 {
+    font-size: 1.5rem;
+  }
+  
+  .text-h3 {
+    font-size: 1.25rem;
+  }
+  
+  .text-small {
+    font-size: 0.875rem;
+  }
+  
+  .text-smaller {
+    font-size: 0.813rem;
+  }
+}
+
+/*=============== REUSABLE COMPONENTS ===============*/
 @layer components {
+  /* Elevated card with subtle shadow */
   .card-elevated {
-    @apply bg-card rounded-xl shadow-sm border border-border/50;
+    @apply bg-card rounded-xl border border-border/50;
+    box-shadow: 0 8px 24px hsla(var(--hue), var(--sat), var(--lig), 0.08);
+  }
+  
+  .card-elevated:hover {
+    box-shadow: 0 12px 32px hsla(var(--hue), var(--sat), var(--lig), 0.12);
   }
 
+  /* Touch-friendly target size */
   .touch-target {
     @apply min-h-[48px] min-w-[48px];
   }
 
+  /* Primary button with shadow */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-primary text-primary-foreground;
+    @apply px-6 py-4 rounded-lg font-medium;
+    @apply transition-all duration-300;
+    box-shadow: 0 8px 24px hsla(var(--hue), var(--sat), var(--lig), 0.25);
+  }
+  
+  .btn-primary:hover {
+    background-color: hsl(var(--hue), var(--sat), 41%);
+  }
+
+  /* Secondary/gray button */
+  .btn-gray {
+    @apply bg-secondary text-secondary-foreground;
+    @apply px-6 py-4 rounded-lg font-medium;
+    @apply transition-colors duration-300;
+  }
+  
+  .btn-gray:hover {
+    @apply bg-muted;
+  }
+
+  /* Filter tabs container */
+  .filters-container {
+    @apply bg-secondary p-1 rounded-xl flex justify-between gap-2;
+  }
+  
+  .filter-btn {
+    @apply w-full border-none outline-none py-3 px-4;
+    @apply text-foreground text-small font-medium;
+    @apply rounded-xl cursor-pointer bg-transparent;
+    @apply transition-colors duration-300;
+  }
+  
+  .filter-btn:hover {
+    @apply bg-background;
+  }
+  
+  .filter-btn.active {
+    @apply bg-background;
+  }
+
+  /* Category colors as background classes */
   .category-electricity {
     @apply bg-[hsl(var(--category-electricity))];
   }
@@ -149,4 +294,64 @@
   .category-food {
     @apply bg-[hsl(var(--category-food))];
   }
+
+  /* Summary card with gradient */
+  .summary-card {
+    @apply bg-primary text-primary-foreground rounded-2xl p-6;
+    background: linear-gradient(135deg, 
+      hsl(var(--hue), var(--sat), var(--lig)) 0%, 
+      hsl(var(--hue), var(--sat), 35%) 100%);
+  }
+
+  /* Amount display */
+  .amount-display {
+    @apply text-3xl font-semibold;
+    letter-spacing: -0.02em;
+  }
+
+  /* Progress bar base */
+  .progress-bar {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+  }
+  
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* Info note box */
+  .info-box {
+    @apply bg-accent/50 rounded-xl p-4;
+  }
+  
+  .info-box p {
+    @apply text-small text-accent-foreground;
+  }
+}
+
+/*=============== SCROLLBAR ===============*/
+::-webkit-scrollbar {
+  width: 0.6rem;
+  border-radius: 0.5rem;
+  background-color: hsl(var(--hue), 8%, 88%);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--hue), 8%, 70%);
+  border-radius: 0.5rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--hue), 8%, 60%);
+}
+
+.dark::-webkit-scrollbar {
+  background-color: hsl(var(--hue), 8%, 16%);
+}
+
+.dark::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--hue), 8%, 24%);
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--hue), 8%, 32%);
 }
