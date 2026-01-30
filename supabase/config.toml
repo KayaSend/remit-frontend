@@ -25,23 +25,3 @@ additional_redirect_urls = ["https://127.0.0.1:3000"]
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
-
-# Edge Functions Configuration
-
-[functions.health]
-verify_jwt = false
-
-[functions.auth]
-verify_jwt = false
-
-[functions.escrows]
-verify_jwt = false
-
-[functions.payment-requests]
-verify_jwt = false
-
-[functions.webhooks-stripe]
-verify_jwt = false
-
-[functions.webhooks-mpesa]
-verify_jwt = false
