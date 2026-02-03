@@ -32,7 +32,7 @@ export default function RecipientHome() {
 
         {/* Request Payment Button - Primary CTA */}
         <Link to="/recipient/request" className="block mb-6">
-          <Button className="w-full h-14 text-base gap-3 shadow-primary">
+          <Button className="w-full h-14 text-base gap-3 bg-primary/60 hover:bg-primary/80">
             <Plus className="w-5 h-5" />
             Request Bill Payment
             <ArrowRight className="w-4 h-4 ml-auto" />

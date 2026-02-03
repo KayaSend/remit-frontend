@@ -53,7 +53,7 @@ export default function SenderDashboard() {
             Your Remittances
           </h2>
           <Link to="/sender/create">
-            <Button size="sm" className="gap-2 shadow-primary">
+            <Button size="sm" className="gap-2 bg-primary/60 hover:bg-primary/80">
               <Plus className="w-4 h-4" />
               Send Money
             </Button>
@@ -77,7 +77,7 @@ export default function SenderDashboard() {
               Send money to family in Kenya. You control how it's spent on bills and essentials.
             </p>
             <Link to="/sender/create">
-              <Button className="shadow-primary">
+              <Button className="bg-primary/60 hover:bg-primary/80">
                 <Plus className="w-4 h-4 mr-2" />
                 Send Your First Remittance
               </Button>

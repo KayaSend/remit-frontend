@@ -1,11 +1,21 @@
-import { ArrowLeftRight, Send, Wallet } from 'lucide-react';
+import { ArrowLeftRight, Send, Wallet, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useRole } from '@/hooks/useRole';
 
 export function Header() {
   const navigate = useNavigate();
-  const { role, setRole } = useRole();
+  const { role, setRole, clearRole } = useRole();
 
   if (!role) return null;
 
@@ -15,11 +25,28 @@ export function Header() {
     navigate(newRole === 'sender' ? '/sender' : '/recipient');
   };
 
+  const handleLogout = () => {
+    clearRole();
+    navigate('/');
+  };
+
+  // Get initials based on role
+  const getInitials = () => {
+    return role === 'sender' ? 'S' : 'R';
+  };
+
+  // Get avatar background color based on role
+  const getAvatarColor = () => {
+    return role === 'sender' 
+      ? 'bg-gradient-to-br from-blue-500 to-cyan-500' 
+      : 'bg-gradient-to-br from-purple-500 to-pink-500';
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border transition-colors duration-300">
       <div className="container flex items-center justify-between h-16 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-primary">
+          <div className="w-10 h-10 rounded-xl bg-primary/70 flex items-center justify-center transition-transform duration-300 hover:scale-105">
             {role === 'sender' ? (
               <Send className="w-5 h-5 text-primary-foreground" />
             ) : (
@@ -34,16 +61,88 @@ export function Header() {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleToggle}
-          className="gap-2 touch-target"
-        >
-          <ArrowLeftRight className="w-4 h-4" />
-          <span className="hidden sm:inline">Switch to {role === 'sender' ? 'Recipient' : 'Sender'}</span>
-          <span className="sm:hidden">Switch</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggle}
+            className="gap-2 touch-target hidden sm:flex"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            <span>Switch to {role === 'sender' ? 'Recipient' : 'Sender'}</span>
+          </Button>
+
+          {/* Profile Avatar with Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-primary/50 transition-all duration-300"
+              >
+                <Avatar className={`h-10 w-10 ${getAvatarColor()} transition-transform duration-300 hover:scale-105`}>
+                  <AvatarImage src="" alt="Profile" />
+                  <AvatarFallback className={`${getAvatarColor()} text-white font-semibold`}>
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              className="w-56 glass border border-border/50" 
+              align="end" 
+              forceMount
+            >
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {role === 'sender' ? 'Sender Account' : 'Recipient Account'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {role === 'sender' ? 'Managing remittances' : 'Receiving payments'}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem 
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => {}}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => {}}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+
+              {/* Mobile-only: Switch Role */}
+              <DropdownMenuItem 
+                className="cursor-pointer hover:bg-accent transition-colors sm:hidden"
+                onClick={handleToggle}
+              >
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                <span>Switch to {role === 'sender' ? 'Recipient' : 'Sender'}</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem 
+                className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );

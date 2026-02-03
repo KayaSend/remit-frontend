@@ -146,7 +146,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Poppins', sans-serif;
     font-size: 0.938rem;
-    transition: 0.3s;
+    transition: background-color 0.3s ease-out, color 0.2s ease-out;
   }
 
   h1, h2, h3 {
@@ -190,6 +190,74 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /*=============== SMOOTH TRANSITIONS ===============*/
+  /* Theme transition - applies smooth color transitions globally */
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: background-color 0.3s ease-out,
+                border-color 0.3s ease-out,
+                color 0.2s ease-out,
+                fill 0.2s ease-out,
+                stroke 0.2s ease-out,
+                box-shadow 0.3s ease-out !important;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .hover-lift:hover {
+    @apply -translate-y-1;
+  }
+
+  /* Hover scale effect */
+  .hover-scale {
+    @apply transition-transform duration-200 ease-out;
+  }
+  .hover-scale:hover {
+    @apply scale-105;
+  }
+
+  /* Hover glow effect */
+  .hover-glow {
+    @apply transition-shadow duration-300 ease-out;
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 20px hsla(var(--primary), 0.3);
+  }
+
+  /* Stagger animation delays for list items */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+
+  /* Smooth appear animation */
+  .appear {
+    @apply opacity-0;
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-background/80 backdrop-blur-lg border border-border/50;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--background)) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
 }
 
 @media screen and (min-width: 968px) {
@@ -220,10 +288,15 @@
   .card-elevated {
     @apply bg-card rounded-xl border border-border/50;
     box-shadow: 0 8px 24px hsla(var(--hue), var(--sat), var(--lig), 0.08);
+    transition: box-shadow 0.3s ease-out,
+                transform 0.3s ease-out,
+                background-color 0.3s ease-out,
+                border-color 0.3s ease-out;
   }
   
   .card-elevated:hover {
     box-shadow: 0 12px 32px hsla(var(--hue), var(--sat), var(--lig), 0.12);
+    transform: translateY(-2px);
   }
 
   /* Touch-friendly target size */

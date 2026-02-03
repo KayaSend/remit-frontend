@@ -77,7 +77,7 @@ export const AnimatedMeshBackground = () => {
 
         // Animation loop
         let time = 0;
-        let targetFPS = 60;
+        const targetFPS = 60;
         let lastFrameTime = Date.now();
 
         const animate = () => {
