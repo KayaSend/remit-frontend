@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 // Sender pages
@@ -30,7 +31,8 @@ const App = () => (
         <Routes>
           {/* Landing / Role Selection */}
           <Route path="/" element={<Index />} />
-          
+          <Route path="/login" element={<Login />} />
+
           {/* Sender Routes */}
           <Route path="/sender" element={<SenderDashboard />} />
           <Route path="/sender/create" element={<CreateRemittance />} />

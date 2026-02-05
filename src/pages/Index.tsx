@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform, useSpring, useReducedMotion } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { usePrivy } from "@privy-io/react-auth";
 import {
   Send,
   Wallet,
@@ -29,8 +28,7 @@ import { Card } from "@/components/ui/card";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { role, setRole, isLoading } = useRole();
-  const { login, ready } = usePrivy();
+  const { role, isLoading } = useRole();
   const prefersReducedMotion = useReducedMotion();
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -51,17 +49,8 @@ const Index = () => {
     }
   }, [role, isLoading, navigate]);
 
-  const handleRoleSelect = async (selectedRole: "sender" | "recipient") => {
-    try {
-      if (ready) {
-        await login();
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Privy login failed", error);
-    }
-
-    setRole(selectedRole);
+  const handleRoleSelect = (selectedRole: "sender" | "recipient") => {
+    navigate(`/login?role=${selectedRole}`);
   };
 
   if (isLoading) {
