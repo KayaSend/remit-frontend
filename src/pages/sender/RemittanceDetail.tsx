@@ -6,15 +6,16 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CategoryProgress } from '@/components/ui/CategoryProgress';
 import { CategoryBadge } from '@/components/ui/CategoryIcon';
-import { useMockRemittances, useMockPaymentHistory } from '@/hooks/useMockData';
+import { useEscrowList } from '@/hooks/useEscrows';
+import { usePaymentRequestList } from '@/hooks/usePaymentRequests';
 import { format } from 'date-fns';
 
 export default function RemittanceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const remittances = useMockRemittances();
-  const paymentHistory = useMockPaymentHistory();
-  
+  const { data: remittances } = useEscrowList();
+  const { data: paymentHistory } = usePaymentRequestList();
+
   const remittance = remittances.find(r => r.id === id);
 
   if (!remittance) {

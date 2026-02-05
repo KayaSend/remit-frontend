@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { useMockRecipientBalances } from '@/hooks/useMockData';
+import { useRecipientBalances } from '@/hooks/useRecipients';
 import { CATEGORY_LABELS, USD_TO_KES, type Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +37,7 @@ const categoryColorMap: Record<Category, string> = {
 
 export default function RequestPayment() {
   const navigate = useNavigate();
-  const balances = useMockRecipientBalances();
+  const { data: balances } = useRecipientBalances();
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [amount, setAmount] = useState('');

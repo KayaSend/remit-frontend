@@ -3,10 +3,10 @@ import { Plus, Wallet, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { BalanceCard } from '@/components/recipient/BalanceCard';
-import { useMockRecipientBalances } from '@/hooks/useMockData';
+import { useRecipientBalances } from '@/hooks/useRecipients';
 
 export default function RecipientHome() {
-  const balances = useMockRecipientBalances();
+  const { data: balances } = useRecipientBalances();
   
   const totalKES = balances.reduce((sum, b) => sum + b.availableKES, 0);
   const totalUSD = balances.reduce((sum, b) => sum + b.availableUSD, 0);

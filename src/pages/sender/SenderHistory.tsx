@@ -5,12 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CategoryBadge } from '@/components/ui/CategoryIcon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { useMockPaymentHistory } from '@/hooks/useMockData';
+import { usePaymentRequestList } from '@/hooks/usePaymentRequests';
 import { format } from 'date-fns';
 
 export default function SenderHistory() {
   const navigate = useNavigate();
-  const payments = useMockPaymentHistory();
+  const { data: payments } = usePaymentRequestList();
 
   return (
     <AppLayout>
