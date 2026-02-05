@@ -8,10 +8,14 @@ const BASE_URL =
 
 const AUTH_TOKEN_KEY = 'remit-auth-token';
 
+// Phase 1: fallback token for development when no login flow has run yet.
+// Remove this once real auth is wired for all user roles.
+const DEV_FALLBACK_TOKEN = 'mock-jwt-token';
+
 // ─── Token helpers ───────────────────────────────────────────────────────────
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return localStorage.getItem(AUTH_TOKEN_KEY) || DEV_FALLBACK_TOKEN;
 }
 
 export function setAuthToken(token: string): void {

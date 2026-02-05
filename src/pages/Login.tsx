@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useRole } from '@/hooks/useRole';
+import { setAuthToken } from '@/services/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ export default function Login() {
     onComplete: () => {
       const targetRole = role || 'sender';
       setRole(targetRole);
+      // Phase 1: Set mock backend token after Privy auth succeeds
+      setAuthToken('mock-jwt-token');
       navigate(targetRole === 'sender' ? '/sender' : '/recipient');
     },
     onError: (error) => {

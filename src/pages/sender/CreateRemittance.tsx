@@ -8,6 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { cn } from '@/lib/utils';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
+import { toast } from 'sonner';
+import { useCreateEscrow } from '@/hooks/useEscrows';
+import { isValidKenyanPhone, toInternationalPhone, ApiError } from '@/services/api';
 
 const steps = ['Recipient', 'Amount', 'Allocate', 'Review'];
 
@@ -44,6 +47,7 @@ interface Allocation {
 
 export default function CreateRemittance() {
   const navigate = useNavigate();
+  const createEscrow = useCreateEscrow();
   const [step, setStep] = useState(0);
   const [phone, setPhone] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
@@ -74,16 +78,39 @@ export default function CreateRemittance() {
 
   const canProceed = () => {
     switch (step) {
-      case 0: return phone.length >= 9;
+      case 0: return isValidKenyanPhone(`0${phone}`);
       case 1: return Number(totalAmount) >= 10;
       case 2: return totalAllocated > 0 && remaining >= 0;
-      case 3: return true;
+      case 3: return !createEscrow.isPending;
       default: return false;
     }
   };
 
-  const handleSubmit = () => {
-    navigate('/sender');
+  const handleSubmit = async () => {
+    const enabledAllocations = allocations.filter(a => a.enabled && a.amount > 0);
+
+    try {
+      const data = await createEscrow.mutateAsync({
+        recipientPhone: toInternationalPhone(`0${phone}`),
+        totalAmountUsd: Number(totalAmount),
+        categories: enabledAllocations.map(a => ({
+          name: CATEGORY_LABELS[a.category],
+          amountUsd: a.amount,
+        })),
+      });
+
+      toast.success('Escrow created successfully');
+      navigate(`/sender/remittance/${data.escrowId}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+        if (err.isServiceBusy) {
+          toast.error('Service is busy. Please retry in a few seconds.');
+        }
+      } else {
+        toast.error('Failed to create escrow. Please try again.');
+      }
+    }
   };
 
   return (
@@ -344,12 +371,14 @@ export default function CreateRemittance() {
 
         {/* Footer Actions */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border">
-          <Button 
+          <Button
             className="w-full h-14 text-base shadow-primary"
-            disabled={!canProceed()}
+            disabled={!canProceed() || createEscrow.isPending}
             onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
           >
-            {step < 3 ? (
+            {createEscrow.isPending ? (
+              <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+            ) : step < 3 ? (
               <>
                 Continue
                 <ArrowRight className="w-5 h-5 ml-2" />
