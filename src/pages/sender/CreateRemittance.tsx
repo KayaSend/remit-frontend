@@ -94,7 +94,7 @@ export default function CreateRemittance() {
         recipientPhone: toInternationalPhone(`0${phone}`),
         totalAmountUsd: Number(totalAmount),
         categories: enabledAllocations.map(a => ({
-          name: CATEGORY_LABELS[a.category],
+          name: a.category,
           amountUsd: a.amount,
         })),
       });
