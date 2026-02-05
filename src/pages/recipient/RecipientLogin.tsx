@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ArrowRight, Shield } from 'lucide-react';
+import { Phone, ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { toast } from 'sonner';
+import { sendOtp, verifyOtp } from '@/services/auth';
+import { isValidKenyanPhone, toInternationalPhone, ApiError } from '@/services/api';
 
 export default function RecipientLogin() {
   const navigate = useNavigate();
@@ -12,26 +15,54 @@ export default function RecipientLogin() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSendOtp = () => {
-    if (phone.length >= 9) {
-      setIsLoading(true);
-      // Mock OTP sending
-      setTimeout(() => {
-        setIsLoading(false);
-        setStep('otp');
-      }, 1000);
+  /** The full phone in +254 format for API calls. */
+  const fullPhone = toInternationalPhone(`0${phone}`);
+
+  const handleSendOtp = async () => {
+    if (!isValidKenyanPhone(`0${phone}`)) {
+      setError('Enter a valid 9-digit Kenyan phone number');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+    try {
+      await sendOtp(fullPhone);
+      toast.success('Verification code sent');
+      setStep('otp');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError('Failed to send verification code. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (otp.length === 6) {
-      setIsLoading(true);
-      // Mock OTP verification
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate('/recipient');
-      }, 1000);
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) return;
+
+    setError('');
+    setIsLoading(true);
+    try {
+      await verifyOtp(fullPhone, otp);
+      toast.success('Signed in successfully');
+      navigate('/recipient');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+        if (err.isServiceBusy) {
+          toast.error('Service is busy. Please retry in a few seconds.');
+        }
+      } else {
+        setError('Verification failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -77,13 +108,22 @@ export default function RecipientLogin() {
                   type="tel"
                   placeholder="712 345 678"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/\D/g, '').slice(0, 9));
+                    setError('');
+                  }}
                   className="flex-1 h-12 text-lg"
                 />
               </div>
+              {error && step === 'phone' && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </p>
+              )}
             </div>
 
-            <Button 
+            <Button
               className="w-full h-12 text-base"
               disabled={phone.length < 9 || isLoading}
               onClick={handleSendOtp}
@@ -113,7 +153,10 @@ export default function RecipientLogin() {
               <InputOTP
                 maxLength={6}
                 value={otp}
-                onChange={setOtp}
+                onChange={(val) => {
+                  setOtp(val);
+                  setError('');
+                }}
               >
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />
@@ -126,7 +169,14 @@ export default function RecipientLogin() {
               </InputOTP>
             </div>
 
-            <Button 
+            {error && (
+              <p className="text-sm text-destructive text-center flex items-center justify-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </p>
+            )}
+
+            <Button
               className="w-full h-12 text-base"
               disabled={otp.length < 6 || isLoading}
               onClick={handleVerifyOtp}
@@ -140,7 +190,11 @@ export default function RecipientLogin() {
 
             <button
               className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setStep('phone')}
+              onClick={() => {
+                setStep('phone');
+                setOtp('');
+                setError('');
+              }}
             >
               Use a different number
             </button>
