@@ -3,11 +3,17 @@ import { CheckCircle, Clock, Loader2, XCircle } from 'lucide-react';
 import type { PaymentStatus } from '@/types/remittance';
 
 interface StatusBadgeProps {
-  status: PaymentStatus | 'active' | 'expired' | 'completed';
+  status: PaymentStatus | 'pending_deposit' | 'active' | 'expired' | 'completed';
   className?: string;
 }
 
 const statusConfig: Record<string, { label: string; icon: typeof Clock; className: string; animate?: boolean }> = {
+  pending_deposit: {
+    label: 'Awaiting Payment',
+    icon: Clock,
+    className: 'bg-warning/10 text-warning',
+    animate: false,
+  },
   pending: {
     label: 'Pending',
     icon: Clock,

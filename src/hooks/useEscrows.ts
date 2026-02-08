@@ -64,7 +64,12 @@ function toRemittance(
     totalAmount,
     remainingBalance,
     allocations,
-    status: detail?.status === 'completed' ? 'completed' : 'active',
+    status:
+      detail?.status === 'completed'
+        ? 'completed'
+        : detail?.status === 'pending_deposit'
+          ? 'pending_deposit'
+          : 'active',
     createdAt: new Date(stored.createdAt),
     expiresAt: new Date(
       new Date(stored.createdAt).getTime() + 90 * 24 * 60 * 60 * 1000,
@@ -99,14 +104,10 @@ export function useCreateEscrow() {
 
   return useMutation({
     mutationFn: (payload: CreateEscrowRequest) => createEscrow(payload),
-    onSuccess: (data, variables) => {
-      addStoredEscrow({
-        escrowId: data.escrowId,
-        recipientPhone: variables.recipientPhone,
-        totalAmountUsd: variables.totalAmountUsd,
-        categories: variables.categories,
-        createdAt: new Date().toISOString(),
-      });
+    // Intentionally does NOT persist to localStorage.
+    // We only save escrows locally once they are funded/active,
+    // so unfunded drafts don't appear in the dashboard.
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escrow'] });
     },
   });

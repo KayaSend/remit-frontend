@@ -1,5 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
-import { initiateOnramp } from '@/services/onramp';
+import {
+  initiateOnramp,
+  createFundingIntent,
+  getFundingIntentStatus,
+  type CreateFundingIntentInput,
+} from '@/services/onramp';
+
+// ─── Legacy: trigger STK push for an existing escrow ─────────────────────────
 
 interface OnrampInput {
   phone: string;
@@ -13,3 +20,15 @@ export function useInitiateOnramp() {
       initiateOnramp(phone, escrowId),
   });
 }
+
+// ─── New flow: Funding Intent ────────────────────────────────────────────────
+
+/** Mutation hook to create a funding intent and trigger M-Pesa STK push. */
+export function useCreateFundingIntent() {
+  return useMutation({
+    mutationFn: (input: CreateFundingIntentInput) => createFundingIntent(input),
+  });
+}
+
+/** Fetch intent status (for one-off calls; polling is done imperatively). */
+export { getFundingIntentStatus };

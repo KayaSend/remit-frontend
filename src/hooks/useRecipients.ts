@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { getDailySpend } from '@/services/recipients';
+import { getDailySpend, getRecipientDashboard } from '@/services/recipients';
 import type { RecipientBalance, Category } from '@/types/remittance';
+import type { RecipientDashboardData } from '@/types/api';
 
 // ─── Daily spend query ───────────────────────────────────────────────────────
 
@@ -12,52 +13,52 @@ export function useDailySpend(recipientId: string | undefined) {
   });
 }
 
+// ─── Recipient Dashboard ─────────────────────────────────────────────────────
+
+export function useRecipientDashboard() {
+  return useQuery({
+    queryKey: ['recipient-dashboard'],
+    queryFn: async () => {
+      const response = await getRecipientDashboard();
+      return response.data;
+    },
+    staleTime: 30_000, // 30 seconds
+    refetchOnWindowFocus: true,
+  });
+}
+
 // ─── Recipient balances ──────────────────────────────────────────────────────
 //
-// The API's /recipients/{id}/daily-spend returns aggregate data, not
-// per-category breakdowns. Until a per-category endpoint is available,
-// this hook returns mock balances so the UI renders correctly.
-//
-// TODO: Replace with real API data when per-category endpoint ships.
+// Transforms dashboard data into RecipientBalance[] for the UI.
+// Falls back to empty array if no dashboard data.
 
-const MOCK_BALANCES: RecipientBalance[] = [
-  {
-    category: 'electricity',
-    availableKES: 8432,
-    availableUSD: 55,
-    dailyLimitKES: 2300,
-    dailySpentKES: 500,
-    isActive: true,
-  },
-  {
-    category: 'water',
-    availableKES: 4602,
-    availableUSD: 30,
-    dailyLimitKES: 1535,
-    dailySpentKES: 0,
-    isActive: true,
-  },
-  {
-    category: 'rent',
-    availableKES: 30700,
-    availableUSD: 200,
-    dailySpentKES: 0,
-    isActive: true,
-  },
-  {
-    category: 'food',
-    availableKES: 5372,
-    availableUSD: 35,
-    dailyLimitKES: 1535,
-    dailySpentKES: 768,
-    isActive: true,
-  },
-];
+const EXCHANGE_RATE = 153.5; // TODO: fetch from API
+
+function mapCategoryToBalance(
+  cat: RecipientDashboardData['categories'][0]
+): RecipientBalance {
+  const categoryKey = cat.category.toLowerCase() as Category;
+  return {
+    category: categoryKey,
+    availableUSD: cat.remainingUsd,
+    availableKES: Math.round(cat.remainingUsd * EXCHANGE_RATE),
+    dailySpentKES: Math.round(cat.spentUsd * EXCHANGE_RATE),
+    isActive: cat.remainingUsd > 0,
+  };
+}
 
 export function useRecipientBalances(): {
   data: RecipientBalance[];
   isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
 } {
-  // TODO: Replace with real API query when per-category endpoint is available
-  return { data: MOCK_BALANCES, isLoading: false };
+  const { data: dashboard, isLoading, isError, error } = useRecipientDashboard();
+
+  if (!dashboard) {
+    return { data: [], isLoading, isError, error: error as Error | null };
+  }
+
+  const balances = dashboard.categories.map(mapCategoryToBalance);
+  return { data: balances, isLoading: false, isError: false, error: null };
 }
