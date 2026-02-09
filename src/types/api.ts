@@ -150,9 +150,12 @@ export interface DailySpendResponse {
 
 export interface RecipientDashboardCategory {
   category: string;
+  escrowId: string;
+  categoryId: string;
   allocatedUsd: number;
   spentUsd: number;
   remainingUsd: number;
+  dailyLimitUsd: number | null;
   escrowCount: number;
 }
 

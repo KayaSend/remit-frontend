@@ -50,8 +50,11 @@ function mapCategoryToBalance(
   const categoryKey = cat.category.toLowerCase() as Category;
   return {
     category: categoryKey,
+    escrowId: cat.escrowId,
+    categoryId: cat.categoryId,
     availableUSD: cat.remainingUsd,
     availableKES: Math.round(cat.remainingUsd * EXCHANGE_RATE),
+    dailyLimitKES: cat.dailyLimitUsd ? Math.round(cat.dailyLimitUsd * EXCHANGE_RATE) : undefined,
     dailySpentKES: Math.round(cat.spentUsd * EXCHANGE_RATE),
     isActive: cat.remainingUsd > 0,
   };

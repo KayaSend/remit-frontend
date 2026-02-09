@@ -38,6 +38,8 @@ export interface PaymentRequest {
 
 export interface RecipientBalance {
   category: Category;
+  escrowId: string;
+  categoryId: string;
   availableKES: number;
   availableUSD: number;
   dailyLimitKES?: number;

@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useRecipientBalances } from '@/hooks/useRecipients';
+import { useCreatePaymentRequest } from '@/hooks/usePaymentRequests';
 import { CATEGORY_LABELS, USD_TO_KES, type Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const accountLabels: Record<Category, string> = {
   electricity: 'Meter Number',
@@ -38,11 +40,12 @@ const categoryColorMap: Record<Category, string> = {
 export default function RequestPayment() {
   const navigate = useNavigate();
   const { data: balances } = useRecipientBalances();
+  const createPaymentRequest = useCreatePaymentRequest();
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [amount, setAmount] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [merchantName, setMerchantName] = useState('');
 
   const selectedBalance = balances.find(b => b.category === selectedCategory);
   const amountNum = Number(amount);
@@ -63,17 +66,36 @@ export default function RequestPayment() {
     }
   };
 
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      navigate('/recipient/payment-status', { 
-        state: { 
+  const handleSubmit = async () => {
+    if (!selectedBalance || !selectedCategory) return;
+
+    const amountKesCents = Math.round(amountNum * 100);
+    const amountUsdCents = Math.round((amountNum / USD_TO_KES) * 100);
+
+    try {
+      const result = await createPaymentRequest.mutateAsync({
+        escrowId: selectedBalance.escrowId,
+        categoryId: selectedBalance.categoryId,
+        categoryName: CATEGORY_LABELS[selectedCategory],
+        amountKesCents,
+        amountUsdCents,
+        exchangeRate: USD_TO_KES,
+        merchantName: merchantName || CATEGORY_LABELS[selectedCategory],
+        merchantAccount: accountNumber,
+      });
+
+      toast.success('Payment request submitted');
+      navigate('/recipient/payment-status', {
+        state: {
+          paymentRequestId: result.paymentRequestId,
           category: selectedCategory,
           amountKES: amountNum,
-          accountNumber 
-        } 
+          accountNumber,
+        },
       });
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to submit payment request');
+    }
   };
 
   const steps = ['Category', 'Amount', 'Account', 'Confirm'];
@@ -324,10 +346,10 @@ export default function RequestPayment() {
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border">
           <Button 
             className="w-full h-14 text-base shadow-primary"
-            disabled={!canProceed() || isSubmitting}
+            disabled={!canProceed() || createPaymentRequest.isPending}
             onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
           >
-            {isSubmitting ? (
+            {createPaymentRequest.isPending ? (
               <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
             ) : step < 3 ? (
               <>

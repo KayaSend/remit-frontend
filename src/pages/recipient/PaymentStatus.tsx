@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, Home, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
+import { usePaymentRequest } from '@/hooks/usePaymentRequests';
 import { cn } from '@/lib/utils';
+import type { PaymentRequestStatus } from '@/types/api';
 
 type Status = 'pending' | 'processing' | 'completed';
 
@@ -33,29 +34,42 @@ const statusConfig = {
   },
 };
 
+/** Map API status to UI status */
+function toUiStatus(apiStatus?: PaymentRequestStatus): Status {
+  switch (apiStatus) {
+    case 'completed':
+      return 'completed';
+    case 'onchain_pending':
+    case 'onchain_done_offramp_pending':
+      return 'processing';
+    case 'pending':
+    default:
+      return 'pending';
+  }
+}
+
 export default function PaymentStatus() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<Status>('pending');
   
-  const { category, amountKES, accountNumber } = (location.state || {}) as {
+  const { paymentRequestId, category, amountKES, accountNumber } = (location.state || {}) as {
+    paymentRequestId?: string;
     category?: Category;
     amountKES?: number;
     accountNumber?: string;
   };
 
-  // Simulate status progression
-  useEffect(() => {
-    const timer1 = setTimeout(() => setStatus('processing'), 2000);
-    const timer2 = setTimeout(() => setStatus('completed'), 5000);
-    
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, []);
+  // Poll payment status every 3 seconds until completed
+  const { data: paymentData, isLoading } = usePaymentRequest(paymentRequestId, {
+    pollInterval: 3000,
+    stopOnStatus: 'completed',
+  });
 
-  if (!category) {
+  const apiStatus = paymentData?.data?.status;
+  const status = toUiStatus(apiStatus);
+  const transactionHash = paymentData?.data?.transaction_hash;
+
+  if (!category || !paymentRequestId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center">
@@ -68,6 +82,18 @@ export default function PaymentStatus() {
 
   const config = statusConfig[status];
   const StatusIcon = config.icon;
+
+  // Show loading state initially
+  if (isLoading && !status) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading payment status...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
@@ -103,13 +129,13 @@ export default function PaymentStatus() {
               <span className="font-medium">{accountNumber}</span>
             </div>
             
-            {status === 'completed' && (
+            {(status === 'completed' && transactionHash) && (
               <div className="flex items-center justify-between py-2 bg-success/10 -mx-4 px-4 rounded-lg mt-4">
                 <span className="text-success font-medium flex items-center gap-2">
                   <Receipt className="w-4 h-4" />
-                  M-Pesa Confirmation
+                  Transaction Hash
                 </span>
-                <span className="font-mono text-success font-medium">RKH8XYZ789</span>
+                <span className="font-mono text-success text-xs break-all">{transactionHash.slice(0, 12)}...{transactionHash.slice(-8)}</span>
               </div>
             )}
           </CardContent>
