@@ -13,6 +13,17 @@ dist-ssr
 *.local
 .env
 
+# Local-only docs and notes
+AGENTS.md
+DEPLOYMENT_SUCCESS.md
+DOCUMENTATION_COMPLETE.md
+ENV_VARIABLES.md
+FRONTEND_INTEGRATION_GUIDE.md
+PRODUCTION_BUILD_NOTES.md
+
+# Local artifacts
+Redis*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
