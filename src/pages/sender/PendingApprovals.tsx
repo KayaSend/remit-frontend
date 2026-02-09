@@ -9,6 +9,7 @@ import {
   useSenderPaymentRequests,
   useApprovePaymentRequest,
   useRejectPaymentRequest,
+  useExecutePaymentRequest,
 } from '@/hooks/usePaymentRequests';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
@@ -50,9 +51,11 @@ export default function PendingApprovals() {
   const { data, isLoading, error } = useSenderPaymentRequests('pending_approval');
   const approveRequest = useApprovePaymentRequest();
   const rejectRequest = useRejectPaymentRequest();
+  const executeRequest = useExecutePaymentRequest();
 
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const [executingId, setExecutingId] = useState<string | null>(null);
 
   const pendingRequests = data?.data || [];
 
@@ -61,8 +64,22 @@ export default function PendingApprovals() {
 
     try {
       if (actionType === 'approve') {
+        // Step 1: Approve the payment
         await approveRequest.mutateAsync(selectedRequest);
-        toast.success('Payment approved successfully');
+        toast.success('Payment approved! Initiating M-Pesa payment...');
+        
+        // Step 2: Execute the payment (trigger M-Pesa off-ramp)
+        setExecutingId(selectedRequest);
+        try {
+          const result = await executeRequest.mutateAsync(selectedRequest);
+          toast.success(`Payment sent! Transaction: ${result.transactionCode}`);
+        } catch (execErr: any) {
+          // Payment approved but execution failed - show warning
+          toast.warning('Payment approved but M-Pesa transfer pending. Please check status later.');
+          console.error('Execute error:', execErr);
+        } finally {
+          setExecutingId(null);
+        }
       } else {
         await rejectRequest.mutateAsync({ paymentRequestId: selectedRequest });
         toast.success('Payment rejected');
@@ -141,8 +158,8 @@ export default function PendingApprovals() {
           {pendingRequests.map((request) => {
             const category = toCategory(request.categoryName);
             const isProcessing =
-              (approveRequest.isPending || rejectRequest.isPending) &&
-              selectedRequest === request.paymentRequestId;
+              (approveRequest.isPending || rejectRequest.isPending || executeRequest.isPending) &&
+              (selectedRequest === request.paymentRequestId || executingId === request.paymentRequestId);
 
             return (
               <Card

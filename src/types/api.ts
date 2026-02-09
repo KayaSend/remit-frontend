@@ -283,6 +283,16 @@ export interface ApproveRejectResponse {
   paymentRequestId: string;
 }
 
+export interface ExecutePaymentResponse {
+  success: boolean;
+  message: string;
+  paymentRequestId: string;
+  transactionCode: string;
+  transactionHash: string;
+  amountKes: number;
+  status: string;
+}
+
 // ─── Shared ──────────────────────────────────────────────────────────────────
 
 export interface ApiErrorBody {

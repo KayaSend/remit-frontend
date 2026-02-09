@@ -5,6 +5,7 @@ import {
   getSenderPaymentRequests,
   approvePaymentRequest,
   rejectPaymentRequest,
+  executePaymentRequest,
 } from '@/services/payments';
 import { fromCents } from '@/services/api';
 import {
@@ -155,6 +156,19 @@ export function useRejectPaymentRequest() {
       rejectPaymentRequest(paymentRequestId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sender-payment-requests'] });
+    },
+  });
+}
+
+export function useExecutePaymentRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (paymentRequestId: string) => executePaymentRequest(paymentRequestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sender-payment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-request'] });
+      queryClient.invalidateQueries({ queryKey: ['escrow'] });
     },
   });
 }

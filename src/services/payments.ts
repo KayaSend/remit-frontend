@@ -5,6 +5,7 @@ import type {
   PaymentRequestDetailResponse,
   PendingPaymentRequestsResponse,
   ApproveRejectResponse,
+  ExecutePaymentResponse,
 } from '@/types/api';
 
 /** Submit a payment request against an escrow category. */
@@ -39,5 +40,13 @@ export function rejectPaymentRequest(paymentRequestId: string, reason?: string) 
   return apiPost<ApproveRejectResponse>(
     `/payment-requests/${paymentRequestId}/reject`,
     { reason },
+  );
+}
+
+/** Execute an approved payment request (initiate M-Pesa off-ramp). */
+export function executePaymentRequest(paymentRequestId: string) {
+  return apiPost<ExecutePaymentResponse>(
+    `/payment-requests/${paymentRequestId}/execute`,
+    {},
   );
 }
