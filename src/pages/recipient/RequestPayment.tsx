@@ -49,7 +49,11 @@ export default function RequestPayment() {
 
   const selectedBalance = balances.find(b => b.category === selectedCategory);
   const amountNum = Number(amount);
-  const dailyRemaining = selectedBalance?.dailyLimitKES 
+  
+  // One-time payment categories bypass daily limits
+  const isOneTimePayment = selectedCategory === 'rent' || selectedCategory === 'school';
+  
+  const dailyRemaining = selectedBalance?.dailyLimitKES && !isOneTimePayment
     ? selectedBalance.dailyLimitKES - selectedBalance.dailySpentKES 
     : null;
   
@@ -224,7 +228,7 @@ export default function RequestPayment() {
                   </div>
                 )}
 
-                {dailyRemaining !== null && (
+                {dailyRemaining !== null && !isOneTimePayment && (
                   <div className={cn(
                     'flex items-start gap-3 mt-4 p-4 rounded-xl',
                     exceedsDaily ? 'bg-destructive/10' : 'bg-muted'
@@ -242,6 +246,20 @@ export default function RequestPayment() {
                       </p>
                       <p className="text-smaller text-muted-foreground mt-0.5">
                         Your sender set this limit for this category
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {isOneTimePayment && amountNum > 0 && !exceedsTotal && (
+                  <div className="flex items-start gap-3 mt-4 p-4 rounded-xl bg-primary/10">
+                    <Check className="w-5 h-5 flex-shrink-0 mt-0.5 text-primary" />
+                    <div>
+                      <p className="text-small font-medium text-primary">
+                        One-time payment - No daily limit
+                      </p>
+                      <p className="text-smaller text-muted-foreground mt-0.5">
+                        You can request the full amount at once
                       </p>
                     </div>
                   </div>
