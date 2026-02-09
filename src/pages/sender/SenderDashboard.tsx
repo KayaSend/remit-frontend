@@ -3,10 +3,10 @@ import { Plus, TrendingUp, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RemittanceCard } from '@/components/sender/RemittanceCard';
-import { useMockRemittances } from '@/hooks/useMockData';
+import { useEscrowList } from '@/hooks/useEscrows';
 
 export default function SenderDashboard() {
-  const remittances = useMockRemittances();
+  const { data: remittances, isLoading } = useEscrowList();
   
   const totalSent = remittances.reduce((sum, r) => sum + r.totalAmount, 0);
   const totalRemaining = remittances.reduce((sum, r) => sum + r.remainingBalance, 0);

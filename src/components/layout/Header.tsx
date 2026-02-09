@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Send, Wallet, LogOut, User, Settings, ChevronDown } from 'lucide-react';
+import { ArrowLeftRight, LogOut, User, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -11,11 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { usePrivy } from '@privy-io/react-auth';
 import { useRole } from '@/hooks/useRole';
 
 export function Header() {
   const navigate = useNavigate();
   const { role, setRole, clearRole } = useRole();
+  const { user, logout } = usePrivy();
+  const email = user?.email?.address;
 
   if (!role) return null;
 
@@ -25,34 +28,26 @@ export function Header() {
     navigate(newRole === 'sender' ? '/sender' : '/recipient');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     clearRole();
     navigate('/');
   };
 
-  // Get initials based on role
+  // Get initials from email, fall back to role initial
   const getInitials = () => {
+    if (email) return email.charAt(0).toUpperCase();
     return role === 'sender' ? 'S' : 'R';
   };
 
-  // Get avatar background color based on role
-  const getAvatarColor = () => {
-    return role === 'sender' 
-      ? 'bg-gradient-to-br from-blue-500 to-cyan-500' 
-      : 'bg-gradient-to-br from-purple-500 to-pink-500';
+  const avatarStyle = {
+    background: 'linear-gradient(135deg, hsl(var(--hue), var(--sat), var(--lig)) 0%, hsl(var(--hue), var(--sat), 35%) 100%)',
   };
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border transition-colors duration-300">
       <div className="container flex items-center justify-between h-16 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/70 flex items-center justify-center transition-transform duration-300 hover:scale-105">
-            {role === 'sender' ? (
-              <Send className="w-5 h-5 text-primary-foreground" />
-            ) : (
-              <Wallet className="w-5 h-5 text-primary-foreground" />
-            )}
-          </div>
           <div>
             <h1 className="font-semibold text-foreground">Remit</h1>
             <p className="text-smaller text-muted-foreground capitalize">
@@ -81,9 +76,9 @@ export function Header() {
                 variant="ghost" 
                 className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-primary/50 transition-all duration-300"
               >
-                <Avatar className={`h-10 w-10 ${getAvatarColor()} transition-transform duration-300 hover:scale-105`}>
+                <Avatar className="h-10 w-10 transition-transform duration-300 hover:scale-105" style={avatarStyle}>
                   <AvatarImage src="" alt="Profile" />
-                  <AvatarFallback className={`${getAvatarColor()} text-white font-semibold`}>
+                  <AvatarFallback className="text-white font-semibold bg-transparent">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
@@ -99,8 +94,8 @@ export function Header() {
                   <p className="text-sm font-medium leading-none">
                     {role === 'sender' ? 'Sender Account' : 'Recipient Account'}
                   </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {role === 'sender' ? 'Managing remittances' : 'Receiving payments'}
+                  <p className="text-xs leading-none text-muted-foreground truncate">
+                    {email || (role === 'sender' ? 'Managing remittances' : 'Receiving payments')}
                   </p>
                 </div>
               </DropdownMenuLabel>

@@ -100,6 +100,29 @@ export interface OnrampResponse {
   transaction_code: string;
 }
 
+// ─── Funding Intent (new flow: pay first, escrow created on confirmation) ───
+
+export interface FundingIntentRequest {
+  phone_number: string; // 0XXXXXXXXX format (sender's M-Pesa)
+  recipient_phone: string; // +254XXXXXXXXX format
+  total_amount_usd: number;
+  categories: EscrowCategory[];
+  memo?: string;
+}
+
+export interface FundingIntentResponse {
+  message: string;
+  transaction_code: string;
+  intent_id: string;
+}
+
+export interface FundingIntentStatusResponse {
+  success: boolean;
+  intentId: string;
+  status: 'pending' | 'confirmed' | 'failed' | 'timeout';
+  escrowId: string | null;
+}
+
 // ─── Off-Ramp (Escrow → M-Pesa) ─────────────────────────────────────────────
 
 export interface OfframpRequest {
@@ -123,6 +146,46 @@ export interface DailySpendResponse {
   remainingTodayUsd: number;
   transactionCount: number;
   lastTransactionAt: string | null;
+}
+
+export interface RecipientDashboardCategory {
+  category: string;
+  escrowId: string;
+  categoryId: string;
+  allocatedUsd: number;
+  spentUsd: number;
+  remainingUsd: number;
+  dailyLimitUsd: number | null;
+  escrowCount: number;
+}
+
+export interface RecipientDashboardEscrow {
+  escrowId: string;
+  totalUsd: number;
+  remainingUsd: number;
+  expiresAt: string;
+  categories: string[];
+}
+
+export interface RecipientDashboardData {
+  recipient: {
+    id: string;
+    phone: string;
+    name: string;
+  };
+  dailySpend: {
+    limitUsd: number;
+    spentTodayUsd: number;
+    remainingTodayUsd: number;
+    transactionCount: number;
+  };
+  categories: RecipientDashboardCategory[];
+  activeEscrows: RecipientDashboardEscrow[];
+}
+
+export interface RecipientDashboardResponse {
+  success: boolean;
+  data: RecipientDashboardData;
 }
 
 // ─── Blockchain ──────────────────────────────────────────────────────────────

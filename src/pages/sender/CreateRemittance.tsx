@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { cn } from '@/lib/utils';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
+import { toast } from 'sonner';
+import { useCreateFundingIntent, getFundingIntentStatus } from '@/hooks/useOnramp';
+import { isValidKenyanPhone, toInternationalPhone, ApiError } from '@/services/api';
+import { PaymentOverlay, type PaymentPhase } from '@/components/sender/PaymentOverlay';
+import { addStoredEscrow } from '@/lib/local-store';
 
 const steps = ['Recipient', 'Amount', 'Allocate', 'Review'];
+
+const POLL_INTERVAL_MS = 3_000;
+const TIMEOUT_SECONDS = 90;
 
 const categoryIcons: Record<Category, typeof Zap> = {
   electricity: Zap,
@@ -44,8 +52,13 @@ interface Allocation {
 
 export default function CreateRemittance() {
   const navigate = useNavigate();
+  const createFundingIntent = useCreateFundingIntent();
+
+  const isProcessing = createFundingIntent.isPending;
+
   const [step, setStep] = useState(0);
   const [phone, setPhone] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [allocations, setAllocations] = useState<Allocation[]>([
     { category: 'electricity', amount: 0, dailyLimit: 15, enabled: false },
@@ -55,12 +68,91 @@ export default function CreateRemittance() {
     { category: 'food', amount: 0, dailyLimit: 20, enabled: false },
   ]);
 
+  // Payment overlay state
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [paymentPhase, setPaymentPhase] = useState<PaymentPhase>('processing');
+  const [transactionCode, setTransactionCode] = useState<string | undefined>();
+  const [confirmedEscrowId, setConfirmedEscrowId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Keep a ref to the intent payload so we can persist it after confirmation
+  const intentPayloadRef = useRef<{
+    recipientPhone: string;
+    totalAmountUsd: number;
+    categories: { name: string; amountUsd: number }[];
+  } | null>(null);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const totalAllocated = allocations.reduce((sum, a) => sum + a.amount, 0);
   const remaining = Number(totalAmount) - totalAllocated;
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
+
+  /**
+   * Poll the funding intent status by transaction_code.
+   * Once status is 'confirmed', the backend has created the escrow.
+   */
+  const startPolling = useCallback((txCode: string) => {
+    stopPolling();
+    setElapsedSeconds(0);
+
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedSeconds(elapsed);
+      if (elapsed >= TIMEOUT_SECONDS) {
+        stopPolling();
+        setPaymentPhase('timeout');
+      }
+    }, 1000);
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await getFundingIntentStatus(txCode);
+        if (res.status === 'confirmed' && res.escrowId) {
+          stopPolling();
+          setConfirmedEscrowId(res.escrowId);
+          setPaymentPhase('success');
+
+          // Persist to localStorage now that the escrow is real
+          if (intentPayloadRef.current) {
+            addStoredEscrow({
+              escrowId: res.escrowId,
+              recipientPhone: intentPayloadRef.current.recipientPhone,
+              totalAmountUsd: intentPayloadRef.current.totalAmountUsd,
+              categories: intentPayloadRef.current.categories,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } else if (res.status === 'failed') {
+          stopPolling();
+          setErrorMessage('Payment failed. Please try again.');
+          setPaymentPhase('error');
+        }
+        // 'pending' → keep polling
+      } catch {
+        // Silently retry — don't break polling on transient errors
+      }
+    }, POLL_INTERVAL_MS);
+  }, [stopPolling]);
+
   const handleAllocationChange = (category: Category, field: 'amount' | 'dailyLimit', value: number) => {
-    setAllocations(prev => prev.map(a => 
-      a.category === category 
+    setAllocations(prev => prev.map(a =>
+      a.category === category
         ? { ...a, [field]: value, enabled: field === 'amount' ? value > 0 : a.enabled }
         : a
     ));
@@ -74,16 +166,81 @@ export default function CreateRemittance() {
 
   const canProceed = () => {
     switch (step) {
-      case 0: return phone.length >= 9;
-      case 1: return Number(totalAmount) >= 10;
+      case 0: return isValidKenyanPhone(`0${phone}`);
+      case 1: return Number(totalAmount) >= 1;
       case 2: return totalAllocated > 0 && remaining >= 0;
-      case 3: return true;
+      case 3: return isValidKenyanPhone(`0${senderPhone}`) && !isProcessing;
       default: return false;
     }
   };
 
-  const handleSubmit = () => {
-    navigate('/sender');
+  /**
+   * New flow: Create funding intent → STK push sent → poll for confirmation.
+   * Escrow is created on the backend ONLY after payment is confirmed.
+   */
+  const handleConfirmAndPay = async () => {
+    const enabledAllocations = allocations.filter(a => a.enabled && a.amount > 0);
+
+    const payload = {
+      senderPhone: `0${senderPhone}`,
+      recipientPhone: toInternationalPhone(`0${phone}`),
+      totalAmountUsd: Number(totalAmount),
+      categories: enabledAllocations.map(a => ({
+        name: a.category,
+        amountUsd: a.amount,
+      })),
+    };
+
+    // Store for later persistence
+    intentPayloadRef.current = {
+      recipientPhone: payload.recipientPhone,
+      totalAmountUsd: payload.totalAmountUsd,
+      categories: payload.categories,
+    };
+
+    setShowOverlay(true);
+    setPaymentPhase('processing');
+    setErrorMessage(undefined);
+    setTransactionCode(undefined);
+    setConfirmedEscrowId(null);
+
+    try {
+      const data = await createFundingIntent.mutateAsync(payload);
+      setTransactionCode(data.transaction_code);
+      setPaymentPhase('waiting');
+      startPolling(data.transaction_code);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Failed to initiate payment.';
+      toast.error(msg);
+      setErrorMessage(msg);
+      setPaymentPhase('error');
+    }
+  };
+
+  /** Retry: create a new funding intent (same payload). */
+  const handleRetry = async () => {
+    if (!intentPayloadRef.current) return;
+
+    setPaymentPhase('processing');
+    setErrorMessage(undefined);
+    setElapsedSeconds(0);
+
+    try {
+      const data = await createFundingIntent.mutateAsync({
+        senderPhone: `0${senderPhone}`,
+        recipientPhone: intentPayloadRef.current.recipientPhone,
+        totalAmountUsd: intentPayloadRef.current.totalAmountUsd,
+        categories: intentPayloadRef.current.categories,
+      });
+      setTransactionCode(data.transaction_code);
+      setPaymentPhase('waiting');
+      startPolling(data.transaction_code);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Failed to initiate payment.';
+      toast.error(msg);
+      setErrorMessage(msg);
+      setPaymentPhase('error');
+    }
   };
 
   return (
@@ -91,11 +248,12 @@ export default function CreateRemittance() {
       <div className="container px-4 py-6 pb-32">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => step > 0 ? setStep(step - 1) : navigate('/sender')}
             className="touch-target"
+            aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -106,13 +264,13 @@ export default function CreateRemittance() {
         </div>
 
         {/* Progress */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-8" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={steps.length}>
           {steps.map((_, i) => (
             <div
               key={i}
               className={cn(
-                'h-1.5 flex-1 rounded-full transition-all duration-300',
-                i < step ? 'bg-primary' : i === step ? 'bg-primary' : 'bg-muted'
+                'h-1.5 flex-1 rounded-full transition-colors duration-300',
+                i <= step ? 'bg-primary' : 'bg-muted'
               )}
             />
           ))}
@@ -125,7 +283,7 @@ export default function CreateRemittance() {
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4">
-                  <Phone className="w-8 h-8 text-accent-foreground" />
+                  <Phone className="w-8 h-8 text-accent-foreground" aria-hidden="true" />
                 </div>
                 <h2 className="text-h2 text-foreground mb-2">Who are you sending to?</h2>
                 <p className="text-small text-muted-foreground">Enter their Kenya phone number</p>
@@ -139,7 +297,10 @@ export default function CreateRemittance() {
                   </div>
                   <Input
                     id="phone"
+                    name="recipientPhone"
                     type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
                     placeholder="712 345 678"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
@@ -155,7 +316,7 @@ export default function CreateRemittance() {
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-8 h-8 text-primary" />
+                  <DollarSign className="w-8 h-8 text-primary" aria-hidden="true" />
                 </div>
                 <h2 className="text-h2 text-foreground mb-2">How much are you sending?</h2>
                 <p className="text-small text-muted-foreground">Enter amount in USD</p>
@@ -167,7 +328,9 @@ export default function CreateRemittance() {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-muted-foreground font-medium">$</span>
                   <Input
                     id="amount"
+                    name="totalAmount"
                     type="number"
+                    inputMode="decimal"
                     placeholder="0.00"
                     value={totalAmount}
                     onChange={(e) => setTotalAmount(e.target.value)}
@@ -202,12 +365,12 @@ export default function CreateRemittance() {
                 {allocations.map((allocation) => {
                   const Icon = categoryIcons[allocation.category];
                   const isRentOrSchool = allocation.category === 'rent' || allocation.category === 'school';
-                  
+
                   return (
-                    <Card 
+                    <Card
                       key={allocation.category}
                       className={cn(
-                        'border-2 transition-all duration-300 cursor-pointer overflow-hidden',
+                        'border-2 transition-colors duration-300 cursor-pointer overflow-hidden',
                         allocation.enabled ? categoryColors[allocation.category] : 'border-border bg-card'
                       )}
                       onClick={() => toggleCategory(allocation.category)}
@@ -218,7 +381,7 @@ export default function CreateRemittance() {
                             'w-11 h-11 rounded-xl flex items-center justify-center transition-colors',
                             allocation.enabled ? categoryIconBg[allocation.category] : 'bg-muted text-muted-foreground'
                           )}>
-                            <Icon className="w-5 h-5" />
+                            <Icon className="w-5 h-5" aria-hidden="true" />
                           </div>
                           <div className="flex-1">
                             <span className="font-medium text-foreground">{CATEGORY_LABELS[allocation.category]}</span>
@@ -230,10 +393,10 @@ export default function CreateRemittance() {
                             )}
                           </div>
                           <div className={cn(
-                            'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all',
+                            'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors',
                             allocation.enabled ? 'bg-primary border-primary' : 'border-muted-foreground'
                           )}>
-                            {allocation.enabled && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                            {allocation.enabled && <Check className="w-3.5 h-3.5 text-primary-foreground" aria-hidden="true" />}
                           </div>
                         </div>
 
@@ -245,6 +408,7 @@ export default function CreateRemittance() {
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-small text-muted-foreground">$</span>
                                 <Input
                                   type="number"
+                                  inputMode="decimal"
                                   value={allocation.amount || ''}
                                   onChange={(e) => handleAllocationChange(allocation.category, 'amount', Number(e.target.value))}
                                   className="pl-7 h-11"
@@ -259,6 +423,7 @@ export default function CreateRemittance() {
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-small text-muted-foreground">$</span>
                                   <Input
                                     type="number"
+                                    inputMode="decimal"
                                     value={allocation.dailyLimit || ''}
                                     onChange={(e) => handleAllocationChange(allocation.category, 'dailyLimit', Number(e.target.value))}
                                     className="pl-7 h-11"
@@ -277,15 +442,15 @@ export default function CreateRemittance() {
             </div>
           )}
 
-          {/* Step 4: Review */}
+          {/* Step 4: Review & Pay */}
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-6">
                 <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-success" />
+                  <Check className="w-8 h-8 text-success" aria-hidden="true" />
                 </div>
-                <h2 className="text-h2 text-foreground mb-2">Review & Confirm</h2>
-                <p className="text-small text-muted-foreground">Make sure everything looks right</p>
+                <h2 className="text-h2 text-foreground mb-2">Review & Pay</h2>
+                <p className="text-small text-muted-foreground">Confirm details and pay via M-Pesa</p>
               </div>
 
               <Card className="card-elevated overflow-hidden">
@@ -302,7 +467,7 @@ export default function CreateRemittance() {
                       <span className="text-xl font-semibold text-primary">${Number(totalAmount).toFixed(2)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="p-4">
                     <span className="text-muted-foreground text-small block mb-3">Category Breakdown</span>
                     <div className="space-y-3">
@@ -312,7 +477,7 @@ export default function CreateRemittance() {
                           <div key={a.category} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', categoryIconBg[a.category])}>
-                                <Icon className="w-4 h-4" />
+                                <Icon className="w-4 h-4" aria-hidden="true" />
                               </div>
                               <span className="font-medium">{CATEGORY_LABELS[a.category]}</span>
                             </div>
@@ -332,10 +497,31 @@ export default function CreateRemittance() {
                 </CardContent>
               </Card>
 
+              {/* Sender M-Pesa phone */}
+              <div className="space-y-3">
+                <Label htmlFor="senderPhone" className="text-small font-medium">Your M-Pesa Phone Number</Label>
+                <div className="flex gap-2">
+                  <div className="flex items-center px-4 bg-secondary rounded-xl border border-input">
+                    <span className="text-muted-foreground font-medium">+254</span>
+                  </div>
+                  <Input
+                    id="senderPhone"
+                    type="tel"
+                    name="senderPhone"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="712 345 678"
+                    value={senderPhone}
+                    onChange={(e) => setSenderPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                    className="flex-1 h-12 text-lg"
+                  />
+                </div>
+              </div>
+
               <div className="info-box">
                 <p className="text-small text-center">
-                  <strong>Money will be locked to these categories.</strong><br />
-                  Your recipient can only use it for the bills you've chosen.
+                  You'll receive an <strong>M-Pesa STK push</strong> on your phone.
+                  Enter your PIN to complete the payment and fund the escrow.
                 </p>
               </div>
             </div>
@@ -344,25 +530,51 @@ export default function CreateRemittance() {
 
         {/* Footer Actions */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border">
-          <Button 
+          <Button
             className="w-full h-14 text-base shadow-primary"
             disabled={!canProceed()}
-            onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
+            onClick={() => {
+              if (step < 3) setStep(step + 1);
+              else handleConfirmAndPay();
+            }}
           >
-            {step < 3 ? (
+            {isProcessing ? (
+              <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+            ) : step < 3 ? (
               <>
                 Continue
                 <ArrowRight className="w-5 h-5 ml-2" />
               </>
             ) : (
               <>
-                <Check className="w-5 h-5 mr-2" />
-                Confirm & Send
+                <Smartphone className="w-5 h-5 mr-2" />
+                Confirm & Pay with M-Pesa
               </>
             )}
           </Button>
         </div>
       </div>
+
+      {/* Payment Confirmation Overlay */}
+      {showOverlay && (
+        <PaymentOverlay
+          phase={paymentPhase}
+          phoneNumber={senderPhone}
+          amountKes={(Number(totalAmount) * 153.5).toLocaleString()}
+          transactionCode={transactionCode}
+          errorMessage={errorMessage}
+          elapsedSeconds={elapsedSeconds}
+          onRetry={handleRetry}
+          onViewEscrow={() => {
+            stopPolling();
+            navigate(confirmedEscrowId ? `/sender/remittance/${confirmedEscrowId}` : '/sender');
+          }}
+          onDone={() => {
+            stopPolling();
+            navigate(confirmedEscrowId ? `/sender/remittance/${confirmedEscrowId}` : '/sender');
+          }}
+        />
+      )}
     </AppLayout>
   );
 }

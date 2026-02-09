@@ -18,11 +18,14 @@ const categoryColorMap: Record<string, string> = {
 };
 
 export function BalanceCard({ balance, onClick }: BalanceCardProps) {
-  const dailyRemaining = balance.dailyLimitKES 
+  // One-time payment categories (rent, school) don't have daily limits
+  const isOneTimePayment = balance.category === 'rent' || balance.category === 'school';
+  
+  const dailyRemaining = balance.dailyLimitKES && !isOneTimePayment
     ? balance.dailyLimitKES - balance.dailySpentKES 
     : null;
   
-  const dailyPercentUsed = balance.dailyLimitKES 
+  const dailyPercentUsed = balance.dailyLimitKES && !isOneTimePayment
     ? (balance.dailySpentKES / balance.dailyLimitKES) * 100 
     : 0;
 
@@ -68,7 +71,7 @@ export function BalanceCard({ balance, onClick }: BalanceCardProps) {
           </p>
         </div>
 
-        {/* Daily limit section */}
+        {/* Daily limit section - only for non-one-time categories */}
         {dailyRemaining !== null && (
           <div className="bg-secondary/50 rounded-lg p-3">
             <div className="flex justify-between items-center mb-2">
@@ -91,6 +94,15 @@ export function BalanceCard({ balance, onClick }: BalanceCardProps) {
                 style={{ width: `${Math.min(dailyPercentUsed, 100)}%` }}
               />
             </div>
+          </div>
+        )}
+
+        {/* One-time payment indicator for rent/school */}
+        {isOneTimePayment && balance.isActive && (
+          <div className="bg-primary/10 rounded-lg p-3">
+            <span className="text-smaller text-primary font-medium">
+              One-time payment · No daily limit
+            </span>
           </div>
         )}
       </CardContent>

@@ -19,7 +19,7 @@ export interface Remittance {
   totalAmount: number; // USD
   remainingBalance: number; // USD
   allocations: CategoryAllocation[];
-  status: 'active' | 'expired' | 'completed';
+  status: 'pending_deposit' | 'active' | 'expired' | 'completed';
   createdAt: Date;
   expiresAt: Date;
 }
@@ -38,6 +38,8 @@ export interface PaymentRequest {
 
 export interface RecipientBalance {
   category: Category;
+  escrowId: string;
+  categoryId: string;
   availableKES: number;
   availableUSD: number;
   dailyLimitKES?: number;

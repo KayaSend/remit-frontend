@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, User } from 'lucide-react';
+import { ChevronRight, User, Smartphone } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
@@ -25,7 +25,7 @@ export function RemittanceCard({ remittance }: RemittanceCardProps) {
 
   return (
     <Link to={`/sender/remittance/${remittance.id}`}>
-      <Card className="card-elevated hover:shadow-elevated-hover transition-all duration-300 animate-fade-in overflow-hidden">
+      <Card className="card-elevated hover:shadow-elevated-hover transition-shadow duration-300 animate-fade-in overflow-hidden">
         <CardContent className="p-5">
           {/* Header: Recipient + Status */}
           <div className="flex items-start justify-between mb-4">
@@ -105,11 +105,22 @@ export function RemittanceCard({ remittance }: RemittanceCardProps) {
             )}
           </div>
 
-          {/* View Details CTA */}
-          <div className="flex items-center justify-end text-small text-primary font-medium">
-            <span>View Details</span>
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </div>
+          {/* CTA */}
+          {remittance.status === 'pending_deposit' ? (
+            <div className="flex items-center justify-between">
+              <span className="text-small text-warning font-medium">Not yet funded</span>
+              <div className="flex items-center gap-1 text-small text-primary font-medium">
+                <Smartphone className="w-4 h-4" />
+                <span>Fund Now</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-end text-small text-primary font-medium">
+              <span>View Details</span>
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>
