@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getDailySpend, getRecipientDashboard } from '@/services/recipients';
+import { claimRecipient, getDailySpend, getRecipientDashboard } from '@/services/recipients';
 import type { RecipientBalance, Category } from '@/types/remittance';
 import type { RecipientDashboardData } from '@/types/api';
 
@@ -19,8 +19,18 @@ export function useRecipientDashboard() {
   return useQuery({
     queryKey: ['recipient-dashboard'],
     queryFn: async () => {
-      const response = await getRecipientDashboard();
-      return response.data;
+      try {
+        const response = await getRecipientDashboard();
+        return response.data;
+      } catch (err: any) {
+        // Option B: If the recipient hasn't claimed yet, attempt to claim and retry once.
+        if (err?.status === 404) {
+          await claimRecipient();
+          const response = await getRecipientDashboard();
+          return response.data;
+        }
+        throw err;
+      }
     },
     staleTime: 30_000, // 30 seconds
     refetchOnWindowFocus: true,
