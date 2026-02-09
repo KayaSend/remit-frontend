@@ -12,6 +12,7 @@ import SenderDashboard from "./pages/sender/SenderDashboard";
 import CreateRemittance from "./pages/sender/CreateRemittance";
 import RemittanceDetail from "./pages/sender/RemittanceDetail";
 import SenderHistory from "./pages/sender/SenderHistory";
+import PendingApprovals from "./pages/sender/PendingApprovals";
 
 // Recipient pages
 import RecipientLogin from "./pages/recipient/RecipientLogin";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/sender/create" element={<CreateRemittance />} />
           <Route path="/sender/remittance/:id" element={<RemittanceDetail />} />
           <Route path="/sender/history" element={<SenderHistory />} />
+          <Route path="/sender/approvals" element={<PendingApprovals />} />
           
           {/* Recipient Routes */}
           <Route path="/recipient/login" element={<RecipientLogin />} />

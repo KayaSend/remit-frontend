@@ -1,5 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createPaymentRequest, getPaymentRequest } from '@/services/payments';
+import {
+  createPaymentRequest,
+  getPaymentRequest,
+  getSenderPaymentRequests,
+  approvePaymentRequest,
+  rejectPaymentRequest,
+} from '@/services/payments';
 import { fromCents } from '@/services/api';
 import {
   getStoredPaymentRequests,
@@ -116,6 +122,39 @@ export function useCreatePaymentRequest() {
       });
       queryClient.invalidateQueries({ queryKey: ['payment-request'] });
       queryClient.invalidateQueries({ queryKey: ['escrow'] });
+    },
+  });
+}
+
+// ─── Sender: Pending Payment Requests ─────────────────────────────────────────
+
+export function useSenderPaymentRequests(status: string = 'pending_approval') {
+  return useQuery({
+    queryKey: ['sender-payment-requests', status],
+    queryFn: () => getSenderPaymentRequests(status),
+  });
+}
+
+export function useApprovePaymentRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (paymentRequestId: string) => approvePaymentRequest(paymentRequestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sender-payment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['escrow'] });
+    },
+  });
+}
+
+export function useRejectPaymentRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ paymentRequestId, reason }: { paymentRequestId: string; reason?: string }) =>
+      rejectPaymentRequest(paymentRequestId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sender-payment-requests'] });
     },
   });
 }
