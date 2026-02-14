@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
-import { Plus, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Plus, TrendingUp, ArrowUpRight, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RemittanceCard } from '@/components/sender/RemittanceCard';
 import { useEscrowList } from '@/hooks/useEscrows';
+import { useSenderPaymentRequests } from '@/hooks/usePaymentRequests';
+import { cn } from '@/lib/utils';
 
 export default function SenderDashboard() {
   const { data: remittances, isLoading } = useEscrowList();
+  const { data: pendingData } = useSenderPaymentRequests('pending_approval');
+  const pendingCount = pendingData?.count || 0;
   
   const totalSent = remittances.reduce((sum, r) => sum + r.totalAmount, 0);
   const totalRemaining = remittances.reduce((sum, r) => sum + r.remainingBalance, 0);
@@ -46,6 +50,33 @@ export default function SenderDashboard() {
             ${totalSpent.toFixed(2)} spent across {remittances.length} remittance{remittances.length !== 1 ? 's' : ''}
           </p>
         </div>
+
+        {/* Pending Approvals Banner */}
+        {pendingCount > 0 && (
+          <Link to="/sender/approvals">
+            <div className="flex items-center justify-between p-4 mb-6 bg-warning/10 border border-warning/30 rounded-xl hover:bg-warning/20 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">
+                    {pendingCount} payment{pendingCount !== 1 ? 's' : ''} awaiting approval
+                  </p>
+                  <p className="text-smaller text-muted-foreground">
+                    Tap to review and approve
+                  </p>
+                </div>
+              </div>
+              <div className={cn(
+                'w-8 h-8 rounded-full bg-warning flex items-center justify-center',
+                'text-warning-foreground font-semibold text-small'
+              )}>
+                {pendingCount}
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Actions */}
         <div className="flex items-center justify-between mb-6">

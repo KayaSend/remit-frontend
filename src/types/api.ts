@@ -251,6 +251,48 @@ export interface HealthResponse {
   status: string;
 }
 
+// ─── Sender Payment Approvals ─────────────────────────────────────────────────
+
+export interface PendingPaymentRequest {
+  paymentRequestId: string;
+  escrowId: string;
+  categoryId: string;
+  categoryName: string;
+  amountKesCents: number;
+  amountUsdCents: number;
+  amountKes: number;
+  amountUsd: number;
+  exchangeRate: number;
+  merchantName: string | null;
+  merchantAccount: string | null;
+  recipientPhone: string | null;
+  recipientName: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface PendingPaymentRequestsResponse {
+  success: boolean;
+  data: PendingPaymentRequest[];
+  count: number;
+}
+
+export interface ApproveRejectResponse {
+  success: boolean;
+  message: string;
+  paymentRequestId: string;
+}
+
+export interface ExecutePaymentResponse {
+  success: boolean;
+  message: string;
+  paymentRequestId: string;
+  transactionCode: string;
+  transactionHash: string;
+  amountKes: number;
+  status: string;
+}
+
 // ─── Shared ──────────────────────────────────────────────────────────────────
 
 export interface ApiErrorBody {

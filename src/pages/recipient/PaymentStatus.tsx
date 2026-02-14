@@ -8,20 +8,27 @@ import { usePaymentRequest } from '@/hooks/usePaymentRequests';
 import { cn } from '@/lib/utils';
 import type { PaymentRequestStatus } from '@/types/api';
 
-type Status = 'pending' | 'processing' | 'completed';
+type Status = 'pending' | 'approved' | 'processing' | 'completed';
 
 const statusConfig = {
   pending: {
     icon: Clock,
-    title: 'Request Submitted',
-    description: 'Your payment request is being processed',
+    title: 'Awaiting Approval',
+    description: 'Your sender will review this request',
     color: 'text-pending',
     bg: 'bg-pending/10',
   },
+  approved: {
+    icon: Clock,
+    title: 'Approved',
+    description: 'Payment approved, preparing M-Pesa transfer',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+  },
   processing: {
     icon: Clock,
-    title: 'Processing Payment',
-    description: 'We\'re paying your bill via M-Pesa',
+    title: 'Sending Payment',
+    description: 'M-Pesa payment in progress...',
     color: 'text-warning',
     bg: 'bg-warning/10',
   },
@@ -35,14 +42,18 @@ const statusConfig = {
 };
 
 /** Map API status to UI status */
-function toUiStatus(apiStatus?: PaymentRequestStatus): Status {
+function toUiStatus(apiStatus?: PaymentRequestStatus | string): Status {
   switch (apiStatus) {
     case 'completed':
       return 'completed';
+    case 'processing':
     case 'onchain_pending':
     case 'onchain_done_offramp_pending':
       return 'processing';
+    case 'approved':
+      return 'approved';
     case 'pending':
+    case 'pending_approval':
     default:
       return 'pending';
   }
@@ -143,9 +154,10 @@ export default function PaymentStatus() {
 
         {/* Progress Steps */}
         <div className="space-y-4 mb-8">
-          {(['pending', 'processing', 'completed'] as Status[]).map((s, i) => {
+          {(['pending', 'approved', 'processing', 'completed'] as Status[]).map((s, i) => {
             const isActive = status === s;
-            const isPast = ['pending', 'processing', 'completed'].indexOf(status) >= i;
+            const statusOrder = ['pending', 'approved', 'processing', 'completed'];
+            const isPast = statusOrder.indexOf(status) >= i;
             
             return (
               <div key={s} className="flex items-center gap-3">
