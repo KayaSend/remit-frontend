@@ -52,10 +52,9 @@ function toUiStatus(apiStatus?: PaymentRequestStatus): PaymentStatus {
   switch (apiStatus) {
     case 'completed':
       return 'completed';
-    case 'onchain_pending':
-    case 'onchain_done_offramp_pending':
+    case 'processing':
       return 'processing';
-    case 'pending':
+    case 'pending_approval':
     default:
       return 'pending';
   }
