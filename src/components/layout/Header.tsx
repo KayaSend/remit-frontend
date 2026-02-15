@@ -1,8 +1,19 @@
-import { ArrowLeftRight, LogOut, User, Settings, KeyRound } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeftRight, LogOut, User, Settings, KeyRound, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +31,7 @@ export function Header() {
   const { user, logout, exportWallet } = usePrivy();
   const { createWallet } = useCreateWallet();
   const email = user?.email?.address;
+  const [showExportWarning, setShowExportWarning] = useState(false);
 
   if (!role) return null;
 
@@ -29,9 +41,9 @@ export function Header() {
     navigate(newRole === 'sender' ? '/sender' : '/recipient');
   };
 
-  const handleExportWallet = async () => {
+  const handleExportWalletConfirmed = async () => {
+    setShowExportWarning(false);
     try {
-      // Ensure embedded wallet exists before exporting
       const hasEmbeddedWallet = user?.linkedAccounts.some(
         (a) => a.type === 'wallet' && a.walletClientType === 'privy'
       );
@@ -62,6 +74,7 @@ export function Header() {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border transition-colors duration-300">
       <div className="container flex items-center justify-between h-16 px-4">
         <div className="flex items-center gap-3">
@@ -136,7 +149,7 @@ export function Header() {
 
               <DropdownMenuItem
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={handleExportWallet}
+                onClick={() => setShowExportWarning(true)}
               >
                 <KeyRound className="mr-2 h-4 w-4" />
                 <span>Export Wallet Key</span>
@@ -165,5 +178,29 @@ export function Header() {
         </div>
       </div>
     </header>
+
+    <AlertDialog open={showExportWarning} onOpenChange={setShowExportWarning}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldAlert className="h-5 w-5 text-warning" />
+            <AlertDialogTitle>Export Private Key</AlertDialogTitle>
+          </div>
+          <AlertDialogDescription className="space-y-2 text-left">
+            <span className="block">Your private key gives <strong>full control</strong> over your wallet and funds. Keep it secret:</span>
+            <span className="block">- Never share it with anyone</span>
+            <span className="block">- Never paste it into websites or messages</span>
+            <span className="block">- Anyone with this key can access your wallet</span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleExportWalletConfirmed}>
+            I Understand, Show Key
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
