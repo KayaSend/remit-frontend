@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone, AlertCircle, CheckCircle2, Edit2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone, AlertCircle, CheckCircle2, Edit2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { cn } from '@/lib/utils';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
@@ -57,6 +58,45 @@ interface Allocation {
   enabled: boolean;
 }
 
+interface AllocationTemplate {
+  name: string;
+  description: string;
+  icon: typeof Sparkles;
+  allocations: { category: Category; percentage: number; dailyLimit?: number }[];
+}
+
+const ALLOCATION_TEMPLATES: AllocationTemplate[] = [
+  {
+    name: 'Essentials',
+    description: 'Basic needs coverage',
+    icon: Home,
+    allocations: [
+      { category: 'rent', percentage: 50 },
+      { category: 'electricity', percentage: 15, dailyLimit: 15 },
+      { category: 'water', percentage: 15, dailyLimit: 10 },
+      { category: 'food', percentage: 20, dailyLimit: 20 },
+    ],
+  },
+  {
+    name: 'Flexible',
+    description: 'Unrestricted spending',
+    icon: Package,
+    allocations: [
+      { category: 'other', percentage: 100, dailyLimit: 25 },
+    ],
+  },
+  {
+    name: 'Family Support',
+    description: 'Education & healthcare',
+    icon: Heart,
+    allocations: [
+      { category: 'education', percentage: 40 },
+      { category: 'medical', percentage: 30, dailyLimit: 25 },
+      { category: 'food', percentage: 30, dailyLimit: 20 },
+    ],
+  },
+];
+
 export default function CreateRemittance() {
   const navigate = useNavigate();
   const createFundingIntent = useCreateFundingIntent();
@@ -64,6 +104,7 @@ export default function CreateRemittance() {
   const isProcessing = createFundingIntent.isPending;
 
   const [step, setStep] = useState(0);
+  const [prevStep, setPrevStep] = useState(0);
   const [phone, setPhone] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
@@ -76,6 +117,17 @@ export default function CreateRemittance() {
     { category: 'education', amount: 0, dailyLimit: 0, enabled: false },
     { category: 'other', amount: 0, dailyLimit: 10, enabled: false },
   ]);
+  const [useSliders, setUseSliders] = useState(true); // Toggle between sliders and inputs
+
+  // Track step direction for animations
+  const stepDirection = step > prevStep ? 'forward' : 'backward';
+  const stepAnimation = stepDirection === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left';
+
+  // Helper to change step with prev tracking
+  const changeStep = (newStep: number) => {
+    setPrevStep(step);
+    setStep(newStep);
+  };
 
   // Payment overlay state
   const [showOverlay, setShowOverlay] = useState(false);
@@ -112,7 +164,7 @@ export default function CreateRemittance() {
           setSenderPhone(draft.senderPhone || '');
           setTotalAmount(draft.totalAmount || '');
           if (draft.allocations) setAllocations(draft.allocations);
-          if (draft.step) setStep(draft.step);
+          if (draft.step) changeStep(draft.step);
           toast.success('Draft restored from your last session');
         } else {
           // Clear old draft
@@ -254,6 +306,25 @@ export default function CreateRemittance() {
     toast.success(`Allocated $${amountPerCategory.toFixed(2)} to each category`);
   };
 
+  const applyTemplate = (template: AllocationTemplate) => {
+    const total = Number(totalAmount);
+    const newAllocations = allocations.map(a => {
+      const templateAlloc = template.allocations.find(ta => ta.category === a.category);
+      if (templateAlloc) {
+        const amount = Number(((total * templateAlloc.percentage) / 100).toFixed(2));
+        return {
+          ...a,
+          amount,
+          dailyLimit: templateAlloc.dailyLimit ?? a.dailyLimit,
+          enabled: true,
+        };
+      }
+      return { ...a, amount: 0, enabled: false };
+    });
+    setAllocations(newAllocations);
+    toast.success(`Applied "${template.name}" template`);
+  };
+
   const canProceed = () => {
     switch (step) {
       case 0: return isValidKenyanPhone(`0${phone}`);
@@ -263,6 +334,36 @@ export default function CreateRemittance() {
       default: return false;
     }
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const canProgress = canProceed();
+
+      switch (e.key) {
+        case 'ArrowRight':
+          if (step < steps.length - 1 && canProgress) {
+            e.preventDefault();
+            changeStep(step + 1);
+          }
+          break;
+        case 'ArrowLeft':
+          if (step > 0) {
+            e.preventDefault();
+            changeStep(step - 1);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [step, phone, senderPhone, totalAmount, totalAllocated, remaining, isProcessing]);
 
   /**
    * New flow: Create funding intent → STK push sent → poll for confirmation.
@@ -341,7 +442,7 @@ export default function CreateRemittance() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => step > 0 ? setStep(step - 1) : navigate('/sender')}
+            onClick={() => step > 0 ? changeStep(step - 1) : navigate('/sender')}
             className="touch-target"
             aria-label="Go back"
           >
@@ -363,7 +464,7 @@ export default function CreateRemittance() {
                   <button
                     type="button"
                     disabled={i > step}
-                    onClick={() => i <= step && setStep(i)}
+                    onClick={() => i <= step && changeStep(i)}
                     className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300',
                       i < step && 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer',
@@ -409,7 +510,7 @@ export default function CreateRemittance() {
         <div className="min-h-[400px]">
           {/* Step 1: Recipient */}
           {step === 0 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className={cn("space-y-6", stepAnimation)}>
               <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-4">
                   <Phone className="w-8 h-8 text-accent-foreground" aria-hidden="true" />
@@ -468,7 +569,7 @@ export default function CreateRemittance() {
 
           {/* Step 2: Amount */}
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className={cn("space-y-6", stepAnimation)}>
               <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <DollarSign className="w-8 h-8 text-primary" aria-hidden="true" />
@@ -571,9 +672,38 @@ export default function CreateRemittance() {
 
           {/* Step 3: Allocate */}
           {step === 2 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className={cn("space-y-6", stepAnimation)}>
               <div className="text-center mb-6">
                 <h2 className="text-h2 text-foreground mb-2">Allocate to categories</h2>
+                <p className="text-small text-muted-foreground">Choose a preset or customize</p>
+              </div>
+
+              {/* Preset Templates */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {ALLOCATION_TEMPLATES.map((template) => {
+                  const TemplateIcon = template.icon;
+                  return (
+                    <Button
+                      key={template.name}
+                      type="button"
+                      variant="outline"
+                      className="h-auto flex-col gap-2 p-3 hover:border-primary hover:bg-primary/5"
+                      onClick={() => applyTemplate(template)}
+                    >
+                      <TemplateIcon className="w-5 h-5 text-primary" />
+                      <div className="text-center">
+                        <div className="font-semibold text-xs">{template.name}</div>
+                        <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                          {template.description}
+                        </div>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {/* Budget Status */}
+              <div className="text-center mb-4">
                 <div className={cn(
                   'inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-base',
                   remaining < 0 ? 'bg-destructive/10 text-destructive' : remaining === 0 ? 'bg-success/10 text-success' : 'bg-accent text-accent-foreground'
@@ -662,21 +792,45 @@ export default function CreateRemittance() {
                         </div>
 
                         {allocation.enabled && (
-                          <div className="space-y-3 pt-4 mt-4 border-t border-border/50" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center gap-3">
-                              <Label className="w-24 text-small text-muted-foreground">Amount</Label>
-                              <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-small text-muted-foreground">$</span>
-                                 <Input
-                                   type="number"
-                                   inputMode="decimal"
-                                   value={allocation.amount || ''}
-                                   onChange={(e) => handleAllocationChange(allocation.category, 'amount', Number(e.target.value))}
-                                   className="pl-7 h-11"
-                                   placeholder="0"
-                                 />
+                          <div className="space-y-4 pt-4 mt-4 border-t border-border/50" onClick={e => e.stopPropagation()}>
+                            {/* Amount with Slider */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-small text-muted-foreground">Amount</Label>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-foreground">${allocation.amount.toFixed(2)}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ({Math.round((allocation.amount / Number(totalAmount)) * 100)}%)
+                                  </span>
+                                </div>
                               </div>
+                              
+                              {useSliders ? (
+                                <Slider
+                                  value={[allocation.amount]}
+                                  onValueChange={([value]) => handleAllocationChange(allocation.category, 'amount', Number(value.toFixed(2)))}
+                                  max={Number(totalAmount)}
+                                  step={1}
+                                  className="w-full"
+                                  aria-label={`Allocate amount for ${CATEGORY_LABELS[allocation.category]}`}
+                                />
+                              ) : (
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-small text-muted-foreground">$</span>
+                                  <Input
+                                    type="number"
+                                    inputMode="decimal"
+                                    value={allocation.amount || ''}
+                                    onChange={(e) => handleAllocationChange(allocation.category, 'amount', Number(e.target.value))}
+                                    className="pl-7 h-11"
+                                    placeholder="0"
+                                    aria-label={`Amount for ${CATEGORY_LABELS[allocation.category]}`}
+                                  />
+                                </div>
+                              )}
                             </div>
+
+                            {/* Daily Limit */}
                             {!isOneTime && (
                               <div className="flex items-center gap-3">
                                 <Label className="w-24 text-small text-muted-foreground">Daily limit</Label>
@@ -689,6 +843,7 @@ export default function CreateRemittance() {
                                     onChange={(e) => handleAllocationChange(allocation.category, 'dailyLimit', Number(e.target.value))}
                                     className="pl-7 h-11"
                                     placeholder="0"
+                                    aria-label={`Daily limit for ${CATEGORY_LABELS[allocation.category]}`}
                                   />
                                 </div>
                               </div>
@@ -705,7 +860,7 @@ export default function CreateRemittance() {
 
           {/* Step 4: Review & Pay */}
           {step === 3 && (
-            <div className="space-y-6 animate-fade-in">
+            <div className={cn("space-y-6", stepAnimation)}>
               <div className="text-center mb-6">
                 <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-success" aria-hidden="true" />
@@ -728,7 +883,7 @@ export default function CreateRemittance() {
                           variant="ghost"
                           size="sm"
                           className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
-                          onClick={() => setStep(0)}
+                          onClick={() => changeStep(0)}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -747,7 +902,7 @@ export default function CreateRemittance() {
                           variant="ghost"
                           size="sm"
                           className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
-                          onClick={() => setStep(1)}
+                          onClick={() => changeStep(1)}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -762,7 +917,7 @@ export default function CreateRemittance() {
                         variant="ghost"
                         size="sm"
                         className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={() => setStep(2)}
+                        onClick={() => changeStep(2)}
                       >
                         <Edit2 className="w-3 h-3 mr-1" />
                         Edit
@@ -858,7 +1013,7 @@ export default function CreateRemittance() {
             className="w-full h-14 text-base shadow-primary"
             disabled={!canProceed()}
             onClick={() => {
-              if (step < 3) setStep(step + 1);
+              if (step < 3) changeStep(step + 1);
               else handleConfirmAndPay();
             }}
           >
