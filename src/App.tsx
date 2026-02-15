@@ -22,6 +22,10 @@ import RequestPayment from "./pages/recipient/RequestPayment";
 import PaymentStatus from "./pages/recipient/PaymentStatus";
 import RecipientHistory from "./pages/recipient/RecipientHistory";
 
+// Shared pages
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+
 // Configure React Query with global error handling and retry logic
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +82,10 @@ const App = () => (
           <Route path="/recipient/payment-status" element={<PaymentStatus />} />
           <Route path="/recipient/history" element={<RecipientHistory />} />
           
+          {/* Shared Routes */}
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>

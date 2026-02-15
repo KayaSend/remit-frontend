@@ -1,19 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeftRight, LogOut, User, Settings, KeyRound, ShieldAlert } from 'lucide-react';
+import { ArrowLeftRight, LogOut, User, Settings, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,14 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { usePrivy, useCreateWallet } from '@privy-io/react-auth';
+import { usePrivy } from '@privy-io/react-auth';
 import { useRole } from '@/hooks/useRole';
+import { ExportWalletDialog } from '@/components/ExportWalletDialog';
 
 export function Header() {
   const navigate = useNavigate();
   const { role, setRole, clearRole } = useRole();
-  const { user, logout, exportWallet } = usePrivy();
-  const { createWallet } = useCreateWallet();
+  const { user, logout } = usePrivy();
   const email = user?.email?.address;
   const [showExportWarning, setShowExportWarning] = useState(false);
 
@@ -39,22 +29,6 @@ export function Header() {
     const newRole = role === 'sender' ? 'recipient' : 'sender';
     setRole(newRole);
     navigate(newRole === 'sender' ? '/sender' : '/recipient');
-  };
-
-  const handleExportWalletConfirmed = async () => {
-    setShowExportWarning(false);
-    try {
-      const hasEmbeddedWallet = user?.linkedAccounts.some(
-        (a) => a.type === 'wallet' && a.walletClientType === 'privy'
-      );
-      if (!hasEmbeddedWallet) {
-        console.log('[ExportWallet] No embedded wallet found, creating one...');
-        await createWallet();
-      }
-      await exportWallet();
-    } catch (err) {
-      console.error('[ExportWallet] Failed:', err);
-    }
   };
 
   const handleLogout = async () => {
@@ -88,7 +62,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -102,8 +76,8 @@ export function Header() {
           {/* Profile Avatar with Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-primary/50 transition-all duration-300"
               >
                 <Avatar className="h-10 w-10 transition-transform duration-300 hover:scale-105" style={avatarStyle}>
@@ -114,9 +88,9 @@ export function Header() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              className="w-56 glass border border-border/50" 
-              align="end" 
+            <DropdownMenuContent
+              className="w-56 glass border border-border/50"
+              align="end"
               forceMount
             >
               <DropdownMenuLabel className="font-normal">
@@ -130,18 +104,18 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              
-              <DropdownMenuItem 
+
+              <DropdownMenuItem
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => {}}
+                onClick={() => navigate('/profile')}
               >
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => {}}
+                onClick={() => navigate('/settings')}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
@@ -156,17 +130,17 @@ export function Header() {
               </DropdownMenuItem>
 
               {/* Mobile-only: Switch Role */}
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="cursor-pointer hover:bg-accent transition-colors sm:hidden"
                 onClick={handleToggle}
               >
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
                 <span>Switch to {role === 'sender' ? 'Recipient' : 'Sender'}</span>
               </DropdownMenuItem>
-              
+
               <DropdownMenuSeparator />
-              
-              <DropdownMenuItem 
+
+              <DropdownMenuItem
                 className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
                 onClick={handleLogout}
               >
@@ -179,28 +153,7 @@ export function Header() {
       </div>
     </header>
 
-    <AlertDialog open={showExportWarning} onOpenChange={setShowExportWarning}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-center gap-2 mb-1">
-            <ShieldAlert className="h-5 w-5 text-warning" />
-            <AlertDialogTitle>Export Private Key</AlertDialogTitle>
-          </div>
-          <AlertDialogDescription className="space-y-2 text-left">
-            <span className="block">Your private key gives <strong>full control</strong> over your wallet and funds. Keep it secret:</span>
-            <span className="block">- Never share it with anyone</span>
-            <span className="block">- Never paste it into websites or messages</span>
-            <span className="block">- Anyone with this key can access your wallet</span>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleExportWalletConfirmed}>
-            I Understand, Show Key
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ExportWalletDialog open={showExportWarning} onOpenChange={setShowExportWarning} />
     </>
   );
 }
