@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useRole } from '@/hooks/useRole';
+import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { setAuthToken } from '@/services/api';
 
 export default function Login() {
@@ -14,6 +15,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') as 'sender' | 'recipient' | null;
   const { setRole } = useRole();
+  const { setupWallet } = useWalletSetup();
 
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -25,6 +27,8 @@ export default function Login() {
       // Phase 1: Set mock backend token after Privy auth succeeds
       setAuthToken('mock-jwt-token');
       navigate(targetRole === 'sender' ? '/sender' : '/recipient');
+      // Fire-and-forget: create embedded wallet + sync to backend
+      setupWallet();
     },
     onError: (error) => {
       console.error('Login error:', error);

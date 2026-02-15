@@ -1,4 +1,4 @@
-import { ArrowLeftRight, LogOut, User, Settings } from 'lucide-react';
+import { ArrowLeftRight, LogOut, User, Settings, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -17,7 +17,7 @@ import { useRole } from '@/hooks/useRole';
 export function Header() {
   const navigate = useNavigate();
   const { role, setRole, clearRole } = useRole();
-  const { user, logout } = usePrivy();
+  const { user, logout, exportWallet } = usePrivy();
   const email = user?.email?.address;
 
   if (!role) return null;
@@ -109,12 +109,20 @@ export function Header() {
                 <span>Profile</span>
               </DropdownMenuItem>
               
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="cursor-pointer hover:bg-accent transition-colors"
                 onClick={() => {}}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => exportWallet()}
+              >
+                <KeyRound className="mr-2 h-4 w-4" />
+                <span>Export Wallet Key</span>
               </DropdownMenuItem>
 
               {/* Mobile-only: Switch Role */}
