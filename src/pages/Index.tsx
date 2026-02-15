@@ -151,7 +151,7 @@ const Index = () => {
             <div className="w-10 h-10 rounded-xl bg-primary/70 flex items-center justify-center">
               <Send className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg">Remit</span>
+            <span className="font-semibold text-lg">KayaSend</span>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -269,7 +269,7 @@ const Index = () => {
         viewport={{ once: true, amount: 0.3 }}
       >
         <div className="container mx-auto max-w-5xl">
-          <h2 className="sr-only">Key stats about Remit</h2>
+          <h2 className="sr-only">Key stats about KayaSend</h2>
           <Card className="card-elevated p-8 md:p-10">
             <motion.div
               className="grid grid-cols-2 md:grid-cols-4 gap-8"
@@ -588,10 +588,10 @@ const Index = () => {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Send className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-semibold">Remit</span>
+              <span className="font-semibold">KayaSend</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Remit. Secure remittances for families.
+              &copy; {new Date().getFullYear()} KayaSend. Secure remittances for families.
             </p>
           </div>
         </div>

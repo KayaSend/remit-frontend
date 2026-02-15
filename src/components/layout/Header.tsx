@@ -49,7 +49,7 @@ export function Header() {
       <div className="container flex items-center justify-between h-16 px-4">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="font-semibold text-foreground">Remit</h1>
+            <h1 className="font-semibold text-foreground">KayaSend</h1>
             <p className="text-smaller text-muted-foreground capitalize">
               {role === 'sender' ? 'Sending Money' : 'Receiving Money'}
             </p>

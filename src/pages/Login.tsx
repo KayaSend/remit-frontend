@@ -54,7 +54,7 @@ export default function Login() {
           <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center mx-auto mb-4">
             <Shield className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Welcome to Remit</h1>
+          <h1 className="text-2xl font-bold mb-2">Welcome to KayaSend</h1>
           <p className="text-primary-foreground/80">
             Sign in to {role === 'recipient' ? 'access your funds' : 'start sending'}
           </p>
