@@ -51,10 +51,13 @@ export interface EscrowDetailResponse {
 // ─── Payment Requests ────────────────────────────────────────────────────────
 
 export type PaymentRequestStatus =
-  | 'pending'
-  | 'onchain_pending'
-  | 'onchain_done_offramp_pending'
-  | 'completed';
+  | 'pending_approval'
+  | 'approved'
+  | 'rejected'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'retry_pending';
 
 export interface CreatePaymentRequestBody {
   escrowId: string;
