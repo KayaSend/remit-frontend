@@ -13,6 +13,7 @@ import { useCreatePaymentRequest } from '@/hooks/usePaymentRequests';
 import { CATEGORY_LABELS, USD_TO_KES, type Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { handleApiError } from '@/lib/error-handler';
 
 const accountLabels: Record<Category, string> = {
   electricity: 'Meter Number',
@@ -102,8 +103,12 @@ export default function RequestPayment() {
         },
       });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to submit payment request';
-      toast.error(message);
+      // Use centralized error handler
+      handleApiError(error, {
+        customMessage: 'Failed to submit payment request',
+        context: 'RequestPayment',
+        onRedirect: (path) => navigate(path),
+      });
     }
   };
 
