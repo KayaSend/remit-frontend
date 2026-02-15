@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -98,6 +98,45 @@ export default function CreateRemittance() {
   const totalAllocated = allocations.reduce((sum, a) => sum + a.amount, 0);
   const remaining = Number(totalAmount) - totalAllocated;
 
+  // Load saved draft from localStorage on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('remittance-draft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        const now = Date.now();
+        const draftAge = now - (draft.timestamp || 0);
+        // Only restore if draft is less than 1 hour old
+        if (draftAge < 60 * 60 * 1000) {
+          setPhone(draft.phone || '');
+          setSenderPhone(draft.senderPhone || '');
+          setTotalAmount(draft.totalAmount || '');
+          if (draft.allocations) setAllocations(draft.allocations);
+          if (draft.step) setStep(draft.step);
+          toast.success('Draft restored from your last session');
+        } else {
+          // Clear old draft
+          localStorage.removeItem('remittance-draft');
+        }
+      } catch (error) {
+        console.error('Failed to restore draft:', error);
+      }
+    }
+  }, []);
+
+  // Auto-save draft to localStorage whenever form state changes
+  useEffect(() => {
+    const draft = {
+      phone,
+      senderPhone,
+      totalAmount,
+      allocations,
+      step,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem('remittance-draft', JSON.stringify(draft));
+  }, [phone, senderPhone, totalAmount, allocations, step]);
+
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
@@ -143,6 +182,9 @@ export default function CreateRemittance() {
           stopPolling();
           setConfirmedEscrowId(res.escrowId);
           setPaymentPhase('success');
+
+          // Clear the draft from localStorage since payment succeeded
+          localStorage.removeItem('remittance-draft');
 
           // Persist to localStorage now that the escrow is real
           if (intentPayloadRef.current) {
@@ -297,17 +339,53 @@ export default function CreateRemittance() {
           </div>
         </div>
 
-        {/* Progress */}
-        <div className="flex gap-2 mb-8" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={steps.length}>
-          {steps.map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                'h-1.5 flex-1 rounded-full transition-colors duration-300',
-                i <= step ? 'bg-primary' : 'bg-muted'
-              )}
-            />
-          ))}
+        {/* Enhanced Progress Indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={steps.length} aria-label={`Step ${step + 1} of ${steps.length}: ${steps[step]}`}>
+            {steps.map((label, i) => (
+              <div key={i} className="flex items-center flex-1">
+                {/* Step Circle */}
+                <div className="flex flex-col items-center">
+                  <div
+                    className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300',
+                      i < step && 'bg-primary text-primary-foreground',
+                      i === step && 'bg-primary text-primary-foreground ring-4 ring-primary/20 scale-110',
+                      i > step && 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {i < step ? <Check className="w-5 h-5" /> : i + 1}
+                  </div>
+                  {/* Step Label - Hidden on mobile for space */}
+                  <span className={cn(
+                    'text-xs mt-2 font-medium hidden sm:block transition-colors',
+                    i <= step ? 'text-foreground' : 'text-muted-foreground'
+                  )}>
+                    {label}
+                  </span>
+                </div>
+                
+                {/* Connecting Line */}
+                {i < steps.length - 1 && (
+                  <div className="flex-1 h-1 mx-2 rounded-full bg-muted overflow-hidden">
+                    <div 
+                      className={cn(
+                        'h-full transition-all duration-500 rounded-full',
+                        i < step ? 'w-full bg-primary' : 'w-0 bg-primary'
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {/* Progress Percentage */}
+          <div className="text-center mt-4">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-primary">{Math.round(((step + 1) / steps.length) * 100)}%</span> Complete
+            </p>
+          </div>
         </div>
 
         {/* Step Content */}
@@ -329,18 +407,44 @@ export default function CreateRemittance() {
                   <div className="flex items-center px-4 bg-secondary rounded-xl border border-input">
                     <span className="text-muted-foreground font-medium">+254</span>
                   </div>
-                  <Input
-                    id="phone"
-                    name="recipientPhone"
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    placeholder="712 345 678"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
-                    className="flex-1 h-12 text-lg"
-                  />
+                  <div className="relative flex-1">
+                    <Input
+                      id="phone"
+                      name="recipientPhone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      placeholder="712 345 678"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                      className={cn(
+                        "h-12 text-lg pr-10",
+                        phone.length > 0 && (isValidKenyanPhone(`0${phone}`) ? 'border-success' : 'border-destructive')
+                      )}
+                    />
+                    {phone.length > 0 && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {isValidKenyanPhone(`0${phone}`) ? (
+                          <CheckCircle2 className="w-5 h-5 text-success" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-destructive" />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
+                {phone.length > 0 && !isValidKenyanPhone(`0${phone}`) && (
+                  <p className="text-smaller text-destructive flex items-center gap-1 mt-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Please enter a valid 9-digit Kenya phone number
+                  </p>
+                )}
+                {phone.length > 0 && isValidKenyanPhone(`0${phone}`) && (
+                  <p className="text-smaller text-success flex items-center gap-1 mt-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Valid phone number
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -353,11 +457,59 @@ export default function CreateRemittance() {
                   <DollarSign className="w-8 h-8 text-primary" aria-hidden="true" />
                 </div>
                 <h2 className="text-h2 text-foreground mb-2">How much are you sending?</h2>
-                <p className="text-small text-muted-foreground">Enter amount in USD</p>
+                <p className="text-small text-muted-foreground">Choose a preset or enter custom amount</p>
+              </div>
+
+              {/* Quick Amount Buttons */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[50, 100, 200, 500].slice(0, 3).map((amount) => (
+                  <Button
+                    key={amount}
+                    type="button"
+                    variant={Number(totalAmount) === amount ? "default" : "outline"}
+                    className={cn(
+                      "h-14 text-base font-semibold transition-all",
+                      Number(totalAmount) === amount && "ring-2 ring-primary ring-offset-2"
+                    )}
+                    onClick={() => setTotalAmount(amount.toString())}
+                  >
+                    ${amount}
+                  </Button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {[500].map((amount) => (
+                  <Button
+                    key={amount}
+                    type="button"
+                    variant={Number(totalAmount) === amount ? "default" : "outline"}
+                    className={cn(
+                      "h-14 text-base font-semibold transition-all",
+                      Number(totalAmount) === amount && "ring-2 ring-primary ring-offset-2"
+                    )}
+                    onClick={() => setTotalAmount(amount.toString())}
+                  >
+                    ${amount}
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant={![50, 100, 200, 500].includes(Number(totalAmount)) && Number(totalAmount) > 0 ? "default" : "outline"}
+                  className={cn(
+                    "h-14 text-base font-semibold transition-all",
+                    ![50, 100, 200, 500].includes(Number(totalAmount)) && Number(totalAmount) > 0 && "ring-2 ring-primary ring-offset-2"
+                  )}
+                  onClick={() => {
+                    setTotalAmount('');
+                    setTimeout(() => document.getElementById('amount')?.focus(), 100);
+                  }}
+                >
+                  Custom
+                </Button>
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="amount" className="text-small font-medium">Amount (USD)</Label>
+                <Label htmlFor="amount" className="text-small font-medium">Or enter custom amount (USD)</Label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-muted-foreground font-medium">$</span>
                   <Input
@@ -368,9 +520,27 @@ export default function CreateRemittance() {
                     placeholder="0.00"
                     value={totalAmount}
                     onChange={(e) => setTotalAmount(e.target.value)}
-                    className="pl-10 text-3xl h-16 font-semibold"
+                    className={cn(
+                      "pl-10 pr-10 text-3xl h-16 font-semibold",
+                      Number(totalAmount) > 0 && (Number(totalAmount) >= 1 ? 'border-success' : 'border-destructive')
+                    )}
                   />
+                  {Number(totalAmount) > 0 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {Number(totalAmount) >= 1 ? (
+                        <CheckCircle2 className="w-6 h-6 text-success" />
+                      ) : (
+                        <AlertCircle className="w-6 h-6 text-destructive" />
+                      )}
+                    </div>
+                  )}
                 </div>
+                {Number(totalAmount) > 0 && Number(totalAmount) < 1 && (
+                  <p className="text-smaller text-destructive flex items-center gap-1 mt-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Minimum amount is $1.00
+                  </p>
+                )}
                 {Number(totalAmount) > 0 && (
                   <div className="bg-accent/50 rounded-xl p-4 mt-4">
                     <p className="text-small text-accent-foreground text-center">
@@ -387,11 +557,16 @@ export default function CreateRemittance() {
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-6">
                 <h2 className="text-h2 text-foreground mb-2">Allocate to categories</h2>
-                <p className={cn(
-                  'text-small',
-                  remaining < 0 ? 'text-destructive' : 'text-muted-foreground'
+                <div className={cn(
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-base',
+                  remaining < 0 ? 'bg-destructive/10 text-destructive' : remaining === 0 ? 'bg-success/10 text-success' : 'bg-accent text-accent-foreground'
                 )}>
-                  ${remaining.toFixed(2)} of ${totalAmount} unallocated
+                  {remaining < 0 && <AlertCircle className="w-5 h-5" />}
+                  {remaining === 0 && <CheckCircle2 className="w-5 h-5" />}
+                  ${Math.abs(remaining).toFixed(2)} {remaining < 0 ? 'over budget' : remaining === 0 ? 'fully allocated' : 'remaining'}
+                </div>
+                <p className="text-smaller text-muted-foreground mt-2">
+                  Total budget: ${totalAmount}
                 </p>
               </div>
 
@@ -538,18 +713,44 @@ export default function CreateRemittance() {
                   <div className="flex items-center px-4 bg-secondary rounded-xl border border-input">
                     <span className="text-muted-foreground font-medium">+254</span>
                   </div>
-                  <Input
-                    id="senderPhone"
-                    type="tel"
-                    name="senderPhone"
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    placeholder="712 345 678"
-                    value={senderPhone}
-                    onChange={(e) => setSenderPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
-                    className="flex-1 h-12 text-lg"
-                  />
+                  <div className="relative flex-1">
+                    <Input
+                      id="senderPhone"
+                      type="tel"
+                      name="senderPhone"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      placeholder="712 345 678"
+                      value={senderPhone}
+                      onChange={(e) => setSenderPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                      className={cn(
+                        "h-12 text-lg pr-10",
+                        senderPhone.length > 0 && (isValidKenyanPhone(`0${senderPhone}`) ? 'border-success' : 'border-destructive')
+                      )}
+                    />
+                    {senderPhone.length > 0 && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {isValidKenyanPhone(`0${senderPhone}`) ? (
+                          <CheckCircle2 className="w-5 h-5 text-success" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-destructive" />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
+                {senderPhone.length > 0 && !isValidKenyanPhone(`0${senderPhone}`) && (
+                  <p className="text-smaller text-destructive flex items-center gap-1 mt-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Please enter a valid 9-digit M-Pesa phone number
+                  </p>
+                )}
+                {senderPhone.length > 0 && isValidKenyanPhone(`0${senderPhone}`) && (
+                  <p className="text-smaller text-success flex items-center gap-1 mt-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Valid M-Pesa number
+                  </p>
+                )}
               </div>
 
               <div className="info-box">
