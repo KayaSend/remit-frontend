@@ -72,6 +72,7 @@ export function useAutoOfframp({
 }: AutoOfframpOptions) {
   const queryClient = useQueryClient();
   const [missingPhoneWarned, setMissingPhoneWarned] = useState(false);
+  const [transactionCode, setTransactionCode] = useState<string | null>(null);
 
   // Stabilize callbacks to prevent effect re-runs
   const stableOnSuccess = useCallback((transactionCode: string) => {
@@ -95,6 +96,7 @@ export function useAutoOfframp({
       txHash: string;
     }) => initiateOfframp(paymentRequestId, phone, amount, txHash),
     onSuccess: (data) => {
+      setTransactionCode(data.transactionCode);
       queryClient.invalidateQueries({ queryKey: ['payment-request'] });
       queryClient.invalidateQueries({ queryKey: ['escrow'] });
       stableOnSuccess(data.transactionCode);
@@ -162,5 +164,6 @@ export function useAutoOfframp({
   return {
     isTriggering: offrampMutation.isPending,
     error: offrampMutation.error,
+    transactionCode,
   };
 }

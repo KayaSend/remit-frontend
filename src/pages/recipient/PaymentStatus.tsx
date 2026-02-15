@@ -136,7 +136,7 @@ export default function PaymentStatus() {
   });
 
   // Auto-trigger M-Pesa disbursement when onchain status is ready
-  const { isTriggering, error: autoOfframpError } = useAutoOfframp({
+  const { isTriggering, transactionCode } = useAutoOfframp({
     paymentData: paymentData?.data,
     recipientPhone,
     amountKes: amountKES,
@@ -223,6 +223,25 @@ export default function PaymentStatus() {
                   Transaction Hash
                 </span>
                 <span className="font-mono text-success text-xs break-all">{transactionHash.slice(0, 12)}...{transactionHash.slice(-8)}</span>
+              </div>
+            )}
+
+            {/* M-Pesa Confirmation Code - show from hook state or backend data */}
+            {(transactionCode || paymentData?.data?.offramp_transaction_code) && (
+              <div className="flex flex-col gap-2 py-3 bg-primary/10 -mx-4 px-4 rounded-lg mt-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-primary" />
+                  <span className="text-primary font-semibold">M-Pesa Payment Sent</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Confirmation Code</span>
+                  <span className="font-mono font-bold text-primary text-lg">
+                    {transactionCode || paymentData?.data?.offramp_transaction_code}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  You should receive an M-Pesa confirmation SMS with this code shortly.
+                </p>
               </div>
             )}
           </CardContent>

@@ -82,6 +82,7 @@ export interface PaymentRequestDetailData {
   onchain_status: string;
   transaction_hash: string | null;
   offramp_status: string;
+  offramp_transaction_code: string | null;
   contract_address: string | null;
   smart_contract_enabled: boolean;
 }
