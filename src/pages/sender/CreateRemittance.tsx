@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone, AlertCircle, CheckCircle2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -240,6 +240,20 @@ export default function CreateRemittance() {
     ));
   };
 
+  const allocateEvenly = () => {
+    const enabledCategories = allocations.filter(a => a.enabled);
+    if (enabledCategories.length === 0) {
+      toast.error('Please select at least one category first');
+      return;
+    }
+    
+    const amountPerCategory = Number(totalAmount) / enabledCategories.length;
+    setAllocations(prev => prev.map(a =>
+      a.enabled ? { ...a, amount: Number(amountPerCategory.toFixed(2)) } : a
+    ));
+    toast.success(`Allocated $${amountPerCategory.toFixed(2)} to each category`);
+  };
+
   const canProceed = () => {
     switch (step) {
       case 0: return isValidKenyanPhone(`0${phone}`);
@@ -346,16 +360,19 @@ export default function CreateRemittance() {
               <div key={i} className="flex items-center flex-1">
                 {/* Step Circle */}
                 <div className="flex flex-col items-center">
-                  <div
+                  <button
+                    type="button"
+                    disabled={i > step}
+                    onClick={() => i <= step && setStep(i)}
                     className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300',
-                      i < step && 'bg-primary text-primary-foreground',
-                      i === step && 'bg-primary text-primary-foreground ring-4 ring-primary/20 scale-110',
-                      i > step && 'bg-muted text-muted-foreground'
+                      i < step && 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer',
+                      i === step && 'bg-primary text-primary-foreground ring-4 ring-primary/20 scale-110 cursor-default',
+                      i > step && 'bg-muted text-muted-foreground cursor-not-allowed'
                     )}
                   >
                     {i < step ? <Check className="w-5 h-5" /> : i + 1}
-                  </div>
+                  </button>
                   {/* Step Label - Hidden on mobile for space */}
                   <span className={cn(
                     'text-xs mt-2 font-medium hidden sm:block transition-colors',
@@ -568,6 +585,41 @@ export default function CreateRemittance() {
                 <p className="text-smaller text-muted-foreground mt-2">
                   Total budget: ${totalAmount}
                 </p>
+                
+                {/* Visual Budget Bar */}
+                <div className="mt-4 px-4">
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={cn(
+                        'h-full transition-all duration-500 rounded-full',
+                        remaining < 0 ? 'bg-destructive' : remaining === 0 ? 'bg-success' : 'bg-primary'
+                      )}
+                      style={{ 
+                        width: `${Math.min((totalAllocated / Number(totalAmount)) * 100, 100)}%` 
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>${totalAllocated.toFixed(2)} allocated</span>
+                    <span>{Math.min(Math.round((totalAllocated / Number(totalAmount)) * 100), 100)}%</span>
+                  </div>
+                </div>
+
+                {/* Quick Action Button */}
+                {allocations.some(a => a.enabled) && remaining > 0 && (
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={allocateEvenly}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Allocate Evenly to Selected Categories
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -666,19 +718,56 @@ export default function CreateRemittance() {
                 <CardContent className="p-0">
                   <div className="p-4 border-b border-border">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Recipient</span>
-                      <span className="font-medium text-foreground">+254 {phone}</span>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Recipient</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-foreground">+254 {phone}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => setStep(0)}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <div className="p-4 border-b border-border bg-primary/5">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Total Amount</span>
-                      <span className="text-xl font-semibold text-primary">${Number(totalAmount).toFixed(2)}</span>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Total Amount</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl font-semibold text-primary">${Number(totalAmount).toFixed(2)}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => setStep(1)}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
                   <div className="p-4">
-                    <span className="text-muted-foreground text-small block mb-3">Category Breakdown</span>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-muted-foreground text-small">Category Breakdown</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => setStep(2)}
+                      >
+                        <Edit2 className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
                     <div className="space-y-3">
                       {allocations.filter(a => a.enabled && a.amount > 0).map((a) => {
                         const Icon = categoryIcons[a.category];
