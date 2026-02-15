@@ -11,13 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useCreateWallet } from '@privy-io/react-auth';
 import { useRole } from '@/hooks/useRole';
 
 export function Header() {
   const navigate = useNavigate();
   const { role, setRole, clearRole } = useRole();
   const { user, logout, exportWallet } = usePrivy();
+  const { createWallet } = useCreateWallet();
   const email = user?.email?.address;
 
   if (!role) return null;
@@ -26,6 +27,22 @@ export function Header() {
     const newRole = role === 'sender' ? 'recipient' : 'sender';
     setRole(newRole);
     navigate(newRole === 'sender' ? '/sender' : '/recipient');
+  };
+
+  const handleExportWallet = async () => {
+    try {
+      // Ensure embedded wallet exists before exporting
+      const hasEmbeddedWallet = user?.linkedAccounts.some(
+        (a) => a.type === 'wallet' && a.walletClientType === 'privy'
+      );
+      if (!hasEmbeddedWallet) {
+        console.log('[ExportWallet] No embedded wallet found, creating one...');
+        await createWallet();
+      }
+      await exportWallet();
+    } catch (err) {
+      console.error('[ExportWallet] Failed:', err);
+    }
   };
 
   const handleLogout = async () => {
@@ -119,7 +136,7 @@ export function Header() {
 
               <DropdownMenuItem
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => exportWallet()}
+                onClick={handleExportWallet}
               >
                 <KeyRound className="mr-2 h-4 w-4" />
                 <span>Export Wallet Key</span>
