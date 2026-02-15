@@ -10,9 +10,10 @@ import { cn } from '@/lib/utils';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
 import { toast } from 'sonner';
 import { useCreateFundingIntent, getFundingIntentStatus } from '@/hooks/useOnramp';
-import { isValidKenyanPhone, toInternationalPhone, ApiError } from '@/services/api';
+import { isValidKenyanPhone, toInternationalPhone } from '@/services/api';
 import { PaymentOverlay, type PaymentPhase } from '@/components/sender/PaymentOverlay';
 import { addStoredEscrow } from '@/lib/local-store';
+import { shouldRetry } from '@/lib/error-handler';
 
 const steps = ['Recipient', 'Amount', 'Allocate', 'Review'];
 
@@ -111,6 +112,9 @@ export default function CreateRemittance() {
     setElapsedSeconds(0);
 
     const startTime = Date.now();
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 5;
+
     timerRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       setElapsedSeconds(elapsed);
@@ -123,6 +127,10 @@ export default function CreateRemittance() {
     pollRef.current = setInterval(async () => {
       try {
         const res = await getFundingIntentStatus(txCode);
+        
+        // Reset error counter on successful poll
+        consecutiveErrors = 0;
+
         if (res.status === 'confirmed' && res.escrowId) {
           stopPolling();
           setConfirmedEscrowId(res.escrowId);
@@ -144,8 +152,26 @@ export default function CreateRemittance() {
           setPaymentPhase('error');
         }
         // 'pending' → keep polling
-      } catch {
-        // Silently retry — don't break polling on transient errors
+      } catch (error) {
+        // Increment error counter
+        consecutiveErrors++;
+        
+        // Log error for debugging
+        console.error('[CreateRemittance:Polling]', {
+          error,
+          consecutiveErrors,
+          isRetryable: shouldRetry(error),
+        });
+
+        // If we've had too many consecutive errors, stop polling and show error
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          stopPolling();
+          const msg = error instanceof Error ? error.message : 'Failed to check payment status';
+          setErrorMessage(`${msg}. Please retry.`);
+          setPaymentPhase('error');
+          toast.error('Unable to verify payment status. Please try again.');
+        }
+        // Otherwise, silently retry on next interval
       }
     }, POLL_INTERVAL_MS);
   }, [stopPolling]);
@@ -210,7 +236,7 @@ export default function CreateRemittance() {
       setPaymentPhase('waiting');
       startPolling(data.transaction_code);
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Failed to initiate payment.';
+      const msg = err instanceof Error ? err.message : 'Failed to initiate payment.';
       toast.error(msg);
       setErrorMessage(msg);
       setPaymentPhase('error');
@@ -236,7 +262,7 @@ export default function CreateRemittance() {
       setPaymentPhase('waiting');
       startPolling(data.transaction_code);
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Failed to initiate payment.';
+      const msg = err instanceof Error ? err.message : 'Failed to initiate payment.';
       toast.error(msg);
       setErrorMessage(msg);
       setPaymentPhase('error');

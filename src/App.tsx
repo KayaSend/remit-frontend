@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { handleApiError, shouldRetry } from "@/lib/error-handler";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -21,7 +22,36 @@ import RequestPayment from "./pages/recipient/RequestPayment";
 import PaymentStatus from "./pages/recipient/PaymentStatus";
 import RecipientHistory from "./pages/recipient/RecipientHistory";
 
-const queryClient = new QueryClient();
+// Configure React Query with global error handling and retry logic
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Retry retryable errors (503, 408, etc.) up to 3 times
+      retry: (failureCount, error) => {
+        if (failureCount >= 3) return false;
+        return shouldRetry(error);
+      },
+      // Exponential backoff: 1s, 2s, 4s
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      // Don't refetch on window focus by default (can be overridden per query)
+      refetchOnWindowFocus: false,
+      // Stale time: 30 seconds
+      staleTime: 30000,
+    },
+    mutations: {
+      // Mutations don't retry by default (user-triggered actions)
+      retry: false,
+      // Global error handler for mutations
+      onError: (error) => {
+        // Handle error with centralized handler (shows toast, etc.)
+        handleApiError(error, {
+          showToast: true,
+          context: 'Mutation',
+        });
+      },
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

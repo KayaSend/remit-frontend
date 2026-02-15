@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { sendOtp, verifyOtp } from '@/services/auth';
-import { isValidKenyanPhone, toInternationalPhone, ApiError } from '@/services/api';
+import { isValidKenyanPhone, toInternationalPhone } from '@/services/api';
+import { handleApiError } from '@/lib/error-handler';
 
 export default function RecipientLogin() {
   const navigate = useNavigate();
@@ -33,11 +34,11 @@ export default function RecipientLogin() {
       toast.success('Verification code sent');
       setStep('otp');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('Failed to send verification code. Please try again.');
-      }
+      const errorInfo = handleApiError(err, {
+        customMessage: 'Failed to send verification code',
+        context: 'RecipientLogin:SendOTP',
+      });
+      setError(errorInfo.userMessage);
     } finally {
       setIsLoading(false);
     }
@@ -53,14 +54,12 @@ export default function RecipientLogin() {
       toast.success('Signed in successfully');
       navigate('/recipient');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        if (err.isServiceBusy) {
-          toast.error('Service is busy. Please retry in a few seconds.');
-        }
-      } else {
-        setError('Verification failed. Please try again.');
-      }
+      const errorInfo = handleApiError(err, {
+        customMessage: 'Verification failed',
+        context: 'RecipientLogin:VerifyOTP',
+        onRedirect: (path) => navigate(path),
+      });
+      setError(errorInfo.userMessage);
     } finally {
       setIsLoading(false);
     }

@@ -73,7 +73,7 @@ export default function PendingApprovals() {
         try {
           const result = await executeRequest.mutateAsync(selectedRequest);
           toast.success(`Payment sent! Transaction: ${result.transactionCode}`);
-        } catch (execErr: any) {
+        } catch (execErr: unknown) {
           // Payment approved but execution failed - show warning
           toast.warning('Payment approved but M-Pesa transfer pending. Please check status later.');
           console.error('Execute error:', execErr);
@@ -84,8 +84,9 @@ export default function PendingApprovals() {
         await rejectRequest.mutateAsync({ paymentRequestId: selectedRequest });
         toast.success('Payment rejected');
       }
-    } catch (err: any) {
-      toast.error(err?.message || `Failed to ${actionType} payment`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : `Failed to ${actionType} payment`;
+      toast.error(message);
     } finally {
       setSelectedRequest(null);
       setActionType(null);

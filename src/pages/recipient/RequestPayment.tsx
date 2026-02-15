@@ -7,11 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { useRecipientBalances } from '@/hooks/useRecipients';
+import { ExchangeRateModal } from '@/components/ui/ExchangeRateModal';
+import { useRecipientBalances, useRecipientDashboard } from '@/hooks/useRecipients';
 import { useCreatePaymentRequest } from '@/hooks/usePaymentRequests';
 import { CATEGORY_LABELS, USD_TO_KES, type Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { handleApiError } from '@/lib/error-handler';
 
 const accountLabels: Record<Category, string> = {
   electricity: 'Meter Number',
@@ -40,12 +42,14 @@ const categoryColorMap: Record<Category, string> = {
 export default function RequestPayment() {
   const navigate = useNavigate();
   const { data: balances } = useRecipientBalances();
+  const { data: dashboard } = useRecipientDashboard();
   const createPaymentRequest = useCreatePaymentRequest();
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [amount, setAmount] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [merchantName, setMerchantName] = useState('');
+  const [showExchangeRateModal, setShowExchangeRateModal] = useState(false);
 
   const selectedBalance = balances.find(b => b.category === selectedCategory);
   const amountNum = Number(amount);
@@ -95,10 +99,16 @@ export default function RequestPayment() {
           category: selectedCategory,
           amountKES: amountNum,
           accountNumber,
+          recipientPhone: dashboard?.recipient.phone,
         },
       });
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to submit payment request');
+    } catch (error: unknown) {
+      // Use centralized error handler
+      handleApiError(error, {
+        customMessage: 'Failed to submit payment request',
+        context: 'RequestPayment',
+        onRedirect: (path) => navigate(path),
+      });
     }
   };
 
@@ -365,7 +375,14 @@ export default function RequestPayment() {
           <Button 
             className="w-full h-14 text-base shadow-primary"
             disabled={!canProceed() || createPaymentRequest.isPending}
-            onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
+            onClick={() => {
+              if (step < 3) {
+                setStep(step + 1);
+              } else {
+                // Show exchange rate modal on final step
+                setShowExchangeRateModal(true);
+              }
+            }}
           >
             {createPaymentRequest.isPending ? (
               <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
@@ -382,6 +399,17 @@ export default function RequestPayment() {
             )}
           </Button>
         </div>
+
+        {/* Exchange Rate Confirmation Modal */}
+        <ExchangeRateModal
+          open={showExchangeRateModal}
+          onOpenChange={setShowExchangeRateModal}
+          onConfirm={handleSubmit}
+          amountKES={amountNum}
+          amountUSD={amountNum / USD_TO_KES}
+          exchangeRate={USD_TO_KES}
+          isLoading={createPaymentRequest.isPending}
+        />
       </div>
     </AppLayout>
   );

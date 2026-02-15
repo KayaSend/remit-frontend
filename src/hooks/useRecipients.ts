@@ -22,9 +22,9 @@ export function useRecipientDashboard() {
       try {
         const response = await getRecipientDashboard();
         return response.data;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Option B: If the recipient hasn't claimed yet, attempt to claim and retry once.
-        if (err?.status === 404) {
+        if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
           await claimRecipient();
           const response = await getRecipientDashboard();
           return response.data;
