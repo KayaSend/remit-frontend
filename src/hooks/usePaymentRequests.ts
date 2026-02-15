@@ -3,6 +3,7 @@ import {
   createPaymentRequest,
   getPaymentRequest,
   getSenderPaymentRequests,
+  getAllSenderPaymentRequests,
   approvePaymentRequest,
   rejectPaymentRequest,
   executePaymentRequest,
@@ -92,6 +93,46 @@ export function usePaymentRequestList() {
   const stored = getStoredPaymentRequests();
   const payments: PaymentRequest[] = stored.map(toPaymentRequest);
   return { data: payments, isLoading: false };
+}
+
+// ─── Escrow Payment History (from API) ──────────────────────────────────────
+
+/** Map PendingPaymentRequest from API to the UI PaymentRequest type. */
+function apiPaymentToUiPayment(apiPayment: import('@/types/api').PendingPaymentRequest): PaymentRequest {
+  return {
+    id: apiPayment.paymentRequestId,
+    remittanceId: apiPayment.escrowId,
+    category: toCategory(apiPayment.categoryName),
+    amountKES: apiPayment.amountKes,
+    amountUSD: apiPayment.amountUsd,
+    accountNumber: apiPayment.merchantAccount || '',
+    status: toUiStatus(apiPayment.status as PaymentRequestStatus),
+    createdAt: new Date(apiPayment.createdAt),
+  };
+}
+
+/**
+ * Fetch all payment requests for a specific escrow from the API.
+ * This replaces the localStorage-based approach for the RemittanceDetail page.
+ */
+export function useEscrowPaymentHistory(escrowId: string | undefined) {
+  return useQuery({
+    queryKey: ['escrow-payment-history', escrowId],
+    queryFn: async () => {
+      const response = await getAllSenderPaymentRequests();
+      
+      // Filter by escrow ID
+      const escrowPayments = response.data.filter(
+        payment => payment.escrowId === escrowId
+      );
+      
+      // Convert to UI format
+      const payments: PaymentRequest[] = escrowPayments.map(apiPaymentToUiPayment);
+      
+      return payments;
+    },
+    enabled: !!escrowId,
+  });
 }
 
 // ─── Create payment request mutation ─────────────────────────────────────────

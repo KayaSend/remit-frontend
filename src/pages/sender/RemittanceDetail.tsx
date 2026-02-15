@@ -7,14 +7,14 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CategoryProgress } from '@/components/ui/CategoryProgress';
 import { CategoryBadge } from '@/components/ui/CategoryIcon';
 import { useEscrowList } from '@/hooks/useEscrows';
-import { usePaymentRequestList } from '@/hooks/usePaymentRequests';
+import { useEscrowPaymentHistory } from '@/hooks/usePaymentRequests';
 import { format } from 'date-fns';
 
 export default function RemittanceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: remittances } = useEscrowList();
-  const { data: paymentHistory } = usePaymentRequestList();
+  const { data: paymentHistory, isLoading: isLoadingHistory } = useEscrowPaymentHistory(id);
 
   const remittance = remittances.find(r => r.id === id);
 
@@ -104,7 +104,11 @@ export default function RemittanceDetail() {
             <CardTitle className="text-base">Payment History</CardTitle>
           </CardHeader>
           <CardContent>
-            {paymentHistory.length > 0 ? (
+            {isLoadingHistory ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Loading payment history...
+              </p>
+            ) : paymentHistory && paymentHistory.length > 0 ? (
               <div className="space-y-3">
                 {paymentHistory.map((payment) => (
                   <div 

@@ -50,3 +50,23 @@ export function executePaymentRequest(paymentRequestId: string) {
     {},
   );
 }
+
+/** Get all payment requests across all statuses (for payment history). */
+export async function getAllSenderPaymentRequests() {
+  const statuses: string[] = ['completed', 'processing', 'approved', 'pending_approval', 'rejected', 'failed'];
+  
+  const responses = await Promise.all(
+    statuses.map(status => 
+      getSenderPaymentRequests(status).catch(() => ({ success: true, data: [], count: 0 }))
+    )
+  );
+  
+  // Merge all results
+  const allPaymentRequests = responses.flatMap(response => response.data || []);
+  
+  return {
+    success: true,
+    data: allPaymentRequests,
+    count: allPaymentRequests.length,
+  };
+}
