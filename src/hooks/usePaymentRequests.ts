@@ -21,15 +21,15 @@ import type { PaymentRequest, PaymentStatus, Category } from '@/types/remittance
 interface UsePaymentRequestOptions {
   /** Poll interval in ms. Pass 0 or false to disable. Default: 0. */
   pollInterval?: number | false;
-  /** Stop polling when this status is reached. */
-  stopOnStatus?: PaymentRequestStatus;
+  /** Stop polling when any of these statuses is reached. */
+  stopOnStatuses?: PaymentRequestStatus[];
 }
 
 export function usePaymentRequest(
   paymentRequestId: string | undefined,
   options: UsePaymentRequestOptions = {},
 ) {
-  const { pollInterval = 0, stopOnStatus } = options;
+  const { pollInterval = 0, stopOnStatuses } = options;
 
   return useQuery({
     queryKey: ['payment-request', paymentRequestId],
@@ -38,7 +38,7 @@ export function usePaymentRequest(
     refetchInterval: pollInterval
       ? (query) => {
           const status = query.state.data?.data?.status;
-          if (stopOnStatus && status === stopOnStatus) return false;
+          if (stopOnStatuses?.includes(status as PaymentRequestStatus)) return false;
           return pollInterval;
         }
       : false,

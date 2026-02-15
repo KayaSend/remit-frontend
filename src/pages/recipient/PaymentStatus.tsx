@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, Home, Receipt } from 'lucide-react';
+import { CheckCircle, Clock, Home, Receipt, XCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
@@ -8,9 +8,17 @@ import { usePaymentRequest } from '@/hooks/usePaymentRequests';
 import { cn } from '@/lib/utils';
 import type { PaymentRequestStatus } from '@/types/api';
 
-type Status = 'pending' | 'approved' | 'processing' | 'completed';
+type Status = 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'rejected';
 
-const statusConfig = {
+const TERMINAL_STATUSES: Status[] = ['completed', 'failed', 'rejected'];
+
+const statusConfig: Record<Status, {
+  icon: typeof Clock;
+  title: string;
+  description: string;
+  color: string;
+  bg: string;
+}> = {
   pending: {
     icon: Clock,
     title: 'Awaiting Approval',
@@ -39,6 +47,20 @@ const statusConfig = {
     color: 'text-success',
     bg: 'bg-success/10',
   },
+  failed: {
+    icon: XCircle,
+    title: 'Payment Failed',
+    description: 'Something went wrong processing your payment',
+    color: 'text-destructive',
+    bg: 'bg-destructive/10',
+  },
+  rejected: {
+    icon: XCircle,
+    title: 'Request Rejected',
+    description: 'Your sender declined this request',
+    color: 'text-destructive',
+    bg: 'bg-destructive/10',
+  },
 };
 
 /** Map API status to UI status */
@@ -50,6 +72,10 @@ function toUiStatus(apiStatus?: PaymentRequestStatus | string): Status {
       return 'processing';
     case 'approved':
       return 'approved';
+    case 'failed':
+      return 'failed';
+    case 'rejected':
+      return 'rejected';
     case 'pending_approval':
     default:
       return 'pending';
@@ -67,10 +93,10 @@ export default function PaymentStatus() {
     accountNumber?: string;
   };
 
-  // Poll payment status every 3 seconds until completed
+  // Poll payment status every 3 seconds until a terminal status is reached
   const { data: paymentData, isLoading } = usePaymentRequest(paymentRequestId, {
     pollInterval: 3000,
-    stopOnStatus: 'completed',
+    stopOnStatuses: ['completed', 'failed', 'rejected'],
   });
 
   const apiStatus = paymentData?.data?.status;
@@ -152,27 +178,39 @@ export default function PaymentStatus() {
         {/* Progress Steps */}
         <div className="space-y-4 mb-8">
           {(['pending', 'approved', 'processing', 'completed'] as Status[]).map((s, i) => {
-            const isActive = status === s;
-            const statusOrder = ['pending', 'approved', 'processing', 'completed'];
-            const isPast = statusOrder.indexOf(status) >= i;
-            
+            const progressOrder = ['pending', 'approved', 'processing', 'completed'];
+            const currentIdx = progressOrder.indexOf(status);
+            const isTerminalError = status === 'failed' || status === 'rejected';
+            // For failed/rejected, figure out which step the error maps to
+            const errorStepIdx = status === 'rejected' ? 0 : status === 'failed' ? 2 : -1;
+            const isPast = isTerminalError
+              ? i < errorStepIdx
+              : currentIdx >= i;
+            const isActive = isTerminalError
+              ? i === errorStepIdx
+              : status === s;
+            const isErrorStep = isTerminalError && isActive;
+
             return (
               <div key={s} className="flex items-center gap-3">
                 <div className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                  isErrorStep ? 'bg-destructive text-destructive-foreground' :
                   isPast ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                 )}>
-                  {isPast ? <CheckCircle className="w-4 h-4" /> : i + 1}
+                  {isErrorStep ? <XCircle className="w-4 h-4" /> :
+                   isPast ? <CheckCircle className="w-4 h-4" /> : i + 1}
                 </div>
                 <div className="flex-1">
                   <p className={cn(
                     'font-medium transition-colors',
+                    isErrorStep ? 'text-destructive' :
                     isActive ? 'text-foreground' : isPast ? 'text-muted-foreground' : 'text-muted-foreground/50'
                   )}>
-                    {statusConfig[s].title}
+                    {isErrorStep ? statusConfig[status].title : statusConfig[s].title}
                   </p>
                 </div>
-                {isActive && status !== 'completed' && (
+                {isActive && !TERMINAL_STATUSES.includes(status) && (
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
@@ -183,13 +221,35 @@ export default function PaymentStatus() {
         {/* Actions */}
         {status === 'completed' && (
           <div className="space-y-3 animate-fade-in">
-            <Button 
+            <Button
               className="w-full h-12"
               onClick={() => navigate('/recipient/request')}
             >
               Make Another Request
             </Button>
-            <Button 
+            <Button
+              variant="outline"
+              className="w-full h-12"
+              onClick={() => navigate('/recipient')}
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
+        )}
+
+        {(status === 'failed' || status === 'rejected') && (
+          <div className="space-y-3 animate-fade-in">
+            <Button
+              className="w-full h-12"
+              onClick={() => navigate('/recipient/request', {
+                state: { category, amountKES, accountNumber },
+              })}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+            <Button
               variant="outline"
               className="w-full h-12"
               onClick={() => navigate('/recipient')}
