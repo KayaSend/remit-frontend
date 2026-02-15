@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { ExchangeRateModal } from '@/components/ui/ExchangeRateModal';
 import { useRecipientBalances, useRecipientDashboard } from '@/hooks/useRecipients';
 import { useCreatePaymentRequest } from '@/hooks/usePaymentRequests';
 import { CATEGORY_LABELS, USD_TO_KES, type Category } from '@/types/remittance';
@@ -47,6 +48,7 @@ export default function RequestPayment() {
   const [amount, setAmount] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [merchantName, setMerchantName] = useState('');
+  const [showExchangeRateModal, setShowExchangeRateModal] = useState(false);
 
   const selectedBalance = balances.find(b => b.category === selectedCategory);
   const amountNum = Number(amount);
@@ -368,7 +370,14 @@ export default function RequestPayment() {
           <Button 
             className="w-full h-14 text-base shadow-primary"
             disabled={!canProceed() || createPaymentRequest.isPending}
-            onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
+            onClick={() => {
+              if (step < 3) {
+                setStep(step + 1);
+              } else {
+                // Show exchange rate modal on final step
+                setShowExchangeRateModal(true);
+              }
+            }}
           >
             {createPaymentRequest.isPending ? (
               <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
@@ -385,6 +394,17 @@ export default function RequestPayment() {
             )}
           </Button>
         </div>
+
+        {/* Exchange Rate Confirmation Modal */}
+        <ExchangeRateModal
+          open={showExchangeRateModal}
+          onOpenChange={setShowExchangeRateModal}
+          onConfirm={handleSubmit}
+          amountKES={amountNum}
+          amountUSD={amountNum / USD_TO_KES}
+          exchangeRate={USD_TO_KES}
+          isLoading={createPaymentRequest.isPending}
+        />
       </div>
     </AppLayout>
   );
