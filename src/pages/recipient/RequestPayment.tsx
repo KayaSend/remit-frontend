@@ -19,24 +19,30 @@ const accountLabels: Record<Category, string> = {
   electricity: 'Meter Number',
   water: 'Account Number',
   rent: 'Landlord M-Pesa',
-  school: 'Student ID / Ref',
   food: 'Store Account',
+  medical: 'Hospital/Clinic Account',
+  education: 'Student ID / Ref',
+  other: 'Account / Reference',
 };
 
 const accountPlaceholders: Record<Category, string> = {
   electricity: 'e.g., 12345678901',
   water: 'e.g., 987654321',
   rent: 'e.g., 0712345678',
-  school: 'e.g., STU-2024-001',
   food: 'e.g., NAIVAS-001',
+  medical: 'e.g., PAT-12345',
+  education: 'e.g., STU-2024-001',
+  other: 'e.g., REF-001',
 };
 
 const categoryColorMap: Record<Category, string> = {
   electricity: 'bg-category-electricity',
   water: 'bg-category-water',
   rent: 'bg-category-rent',
-  school: 'bg-category-school',
   food: 'bg-category-food',
+  medical: 'bg-category-medical',
+  education: 'bg-category-education',
+  other: 'bg-category-other',
 };
 
 export default function RequestPayment() {
@@ -55,7 +61,7 @@ export default function RequestPayment() {
   const amountNum = Number(amount);
   
   // One-time payment categories bypass daily limits
-  const isOneTimePayment = selectedCategory === 'rent' || selectedCategory === 'school';
+  const isOneTimePayment = selectedCategory === 'rent' || selectedCategory === 'education';
   
   const dailyRemaining = selectedBalance?.dailyLimitKES && !isOneTimePayment
     ? selectedBalance.dailyLimitKES - selectedBalance.dailySpentKES 

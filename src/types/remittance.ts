@@ -1,6 +1,6 @@
 export type UserRole = 'sender' | 'recipient';
 
-export type Category = 'electricity' | 'water' | 'rent' | 'school' | 'food';
+export type Category = 'electricity' | 'water' | 'rent' | 'food' | 'medical' | 'education' | 'other';
 
 export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -51,16 +51,20 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   electricity: 'Electricity',
   water: 'Water',
   rent: 'Rent',
-  school: 'School Fees',
-  food: 'Food',
+  food: 'Food & Groceries',
+  medical: 'Medical & Healthcare',
+  education: 'Education & School Fees',
+  other: 'Other Expenses',
 };
 
 export const CATEGORY_ICONS: Record<Category, string> = {
   electricity: 'Zap',
   water: 'Droplets',
   rent: 'Home',
-  school: 'GraduationCap',
   food: 'ShoppingCart',
+  medical: 'Heart',
+  education: 'GraduationCap',
+  other: 'Package',
 };
 
 // Mock exchange rate

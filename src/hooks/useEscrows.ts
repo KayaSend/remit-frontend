@@ -27,12 +27,16 @@ function toCategory(name: string): Category {
     electricity: 'electricity',
     water: 'water',
     rent: 'rent',
-    school: 'school',
-    'school fees': 'school',
     food: 'food',
     groceries: 'food',
+    medical: 'medical',
+    healthcare: 'medical',
+    education: 'education',
+    'school fees': 'education',
+    school: 'education',
+    other: 'other',
   };
-  return map[name.toLowerCase()] ?? 'food';
+  return map[name.toLowerCase()] ?? 'other';
 }
 
 /** Merge stored creation data with live API detail into a UI Remittance. */

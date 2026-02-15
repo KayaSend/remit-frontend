@@ -19,6 +19,8 @@ import {
   Home,
   GraduationCap,
   UtensilsCrossed,
+  Heart,
+  Package,
 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { useEffect, useRef } from "react";
@@ -96,8 +98,10 @@ const Index = () => {
     { icon: Lightbulb, name: "Electricity", color: "bg-category-electricity", textColor: "text-category-electricity" },
     { icon: Droplets, name: "Water", color: "bg-category-water", textColor: "text-category-water" },
     { icon: Home, name: "Rent", color: "bg-category-rent", textColor: "text-category-rent" },
-    { icon: GraduationCap, name: "School", color: "bg-category-school", textColor: "text-category-school" },
     { icon: UtensilsCrossed, name: "Food", color: "bg-category-food", textColor: "text-category-food" },
+    { icon: Heart, name: "Medical", color: "bg-category-medical", textColor: "text-category-medical" },
+    { icon: GraduationCap, name: "Education", color: "bg-category-education", textColor: "text-category-education" },
+    { icon: Package, name: "Other", color: "bg-category-other", textColor: "text-category-other" },
   ];
 
   // How it works steps

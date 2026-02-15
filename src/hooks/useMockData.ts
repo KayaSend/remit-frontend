@@ -13,7 +13,7 @@ export function useMockRemittances(): Remittance[] {
         { category: 'electricity' as Category, allocated: 100, spent: 45, dailyLimit: 15 },
         { category: 'water' as Category, allocated: 50, spent: 20, dailyLimit: 10 },
         { category: 'rent' as Category, allocated: 200, spent: 0, isOneTime: true },
-        { category: 'school' as Category, allocated: 100, spent: 100 },
+        { category: 'education' as Category, allocated: 100, spent: 100 },
         { category: 'food' as Category, allocated: 50, spent: 15, dailyLimit: 10 },
       ],
       status: 'active',
@@ -29,7 +29,7 @@ export function useMockRemittances(): Remittance[] {
       allocations: [
         { category: 'electricity' as Category, allocated: 80, spent: 40, dailyLimit: 10 },
         { category: 'food' as Category, allocated: 120, spent: 80, dailyLimit: 20 },
-        { category: 'school' as Category, allocated: 100, spent: 0 },
+        { category: 'education' as Category, allocated: 100, spent: 0 },
       ],
       status: 'active',
       createdAt: new Date('2024-01-20'),

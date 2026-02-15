@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Smartphone } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Phone, DollarSign, Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,24 +24,30 @@ const categoryIcons: Record<Category, typeof Zap> = {
   electricity: Zap,
   water: Droplets,
   rent: Home,
-  school: GraduationCap,
   food: ShoppingCart,
+  medical: Heart,
+  education: GraduationCap,
+  other: Package,
 };
 
 const categoryColors: Record<Category, string> = {
   electricity: 'border-category-electricity bg-category-electricity/5',
   water: 'border-category-water bg-category-water/5',
   rent: 'border-category-rent bg-category-rent/5',
-  school: 'border-category-school bg-category-school/5',
   food: 'border-category-food bg-category-food/5',
+  medical: 'border-category-medical bg-category-medical/5',
+  education: 'border-category-education bg-category-education/5',
+  other: 'border-category-other bg-category-other/5',
 };
 
 const categoryIconBg: Record<Category, string> = {
   electricity: 'bg-category-electricity/10 text-category-electricity',
   water: 'bg-category-water/10 text-category-water',
   rent: 'bg-category-rent/10 text-category-rent',
-  school: 'bg-category-school/10 text-category-school',
   food: 'bg-category-food/10 text-category-food',
+  medical: 'bg-category-medical/10 text-category-medical',
+  education: 'bg-category-education/10 text-category-education',
+  other: 'bg-category-other/10 text-category-other',
 };
 
 interface Allocation {
@@ -65,8 +71,10 @@ export default function CreateRemittance() {
     { category: 'electricity', amount: 0, dailyLimit: 15, enabled: false },
     { category: 'water', amount: 0, dailyLimit: 10, enabled: false },
     { category: 'rent', amount: 0, dailyLimit: 0, enabled: false },
-    { category: 'school', amount: 0, dailyLimit: 0, enabled: false },
     { category: 'food', amount: 0, dailyLimit: 20, enabled: false },
+    { category: 'medical', amount: 0, dailyLimit: 25, enabled: false },
+    { category: 'education', amount: 0, dailyLimit: 0, enabled: false },
+    { category: 'other', amount: 0, dailyLimit: 10, enabled: false },
   ]);
 
   // Payment overlay state
@@ -390,7 +398,7 @@ export default function CreateRemittance() {
               <div className="space-y-3">
                 {allocations.map((allocation) => {
                   const Icon = categoryIcons[allocation.category];
-                  const isRentOrSchool = allocation.category === 'rent' || allocation.category === 'school';
+                  const isOneTime = allocation.category === 'rent' || allocation.category === 'education';
 
                   return (
                     <Card
@@ -411,10 +419,10 @@ export default function CreateRemittance() {
                           </div>
                           <div className="flex-1">
                             <span className="font-medium text-foreground">{CATEGORY_LABELS[allocation.category]}</span>
-                            {!isRentOrSchool && (
+                            {!isOneTime && (
                               <p className="text-smaller text-muted-foreground">Daily limit available</p>
                             )}
-                            {isRentOrSchool && (
+                            {isOneTime && (
                               <p className="text-smaller text-muted-foreground">One-time payment</p>
                             )}
                           </div>
@@ -432,17 +440,17 @@ export default function CreateRemittance() {
                               <Label className="w-24 text-small text-muted-foreground">Amount</Label>
                               <div className="relative flex-1">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-small text-muted-foreground">$</span>
-                                <Input
-                                  type="number"
-                                  inputMode="decimal"
-                                  value={allocation.amount || ''}
-                                  onChange={(e) => handleAllocationChange(allocation.category, 'amount', Number(e.target.value))}
-                                  className="pl-7 h-11"
-                                  placeholder="0"
-                                />
+                                 <Input
+                                   type="number"
+                                   inputMode="decimal"
+                                   value={allocation.amount || ''}
+                                   onChange={(e) => handleAllocationChange(allocation.category, 'amount', Number(e.target.value))}
+                                   className="pl-7 h-11"
+                                   placeholder="0"
+                                 />
                               </div>
                             </div>
-                            {!isRentOrSchool && (
+                            {!isOneTime && (
                               <div className="flex items-center gap-3">
                                 <Label className="w-24 text-small text-muted-foreground">Daily limit</Label>
                                 <div className="relative flex-1">

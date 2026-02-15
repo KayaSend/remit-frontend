@@ -14,8 +14,10 @@ const categoryColorMap: Record<string, string> = {
   electricity: 'bg-category-electricity',
   water: 'bg-category-water',
   rent: 'bg-category-rent',
-  school: 'bg-category-school',
   food: 'bg-category-food',
+  medical: 'bg-category-medical',
+  education: 'bg-category-education',
+  other: 'bg-category-other',
 };
 
 export function RemittanceCard({ remittance }: RemittanceCardProps) {

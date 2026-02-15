@@ -29,8 +29,10 @@ const categoryColorMap: Record<string, string> = {
   electricity: 'bg-category-electricity',
   water: 'bg-category-water',
   rent: 'bg-category-rent',
-  school: 'bg-category-school',
   food: 'bg-category-food',
+  medical: 'bg-category-medical',
+  education: 'bg-category-education',
+  other: 'bg-category-other',
 };
 
 function toCategory(name: string): Category {
@@ -38,12 +40,16 @@ function toCategory(name: string): Category {
     electricity: 'electricity',
     water: 'water',
     rent: 'rent',
-    school: 'school',
-    'school fees': 'school',
     food: 'food',
     groceries: 'food',
+    medical: 'medical',
+    healthcare: 'medical',
+    education: 'education',
+    'school fees': 'education',
+    school: 'education',
+    other: 'other',
   };
-  return map[name.toLowerCase()] ?? 'food';
+  return map[name.toLowerCase()] ?? 'other';
 }
 
 export default function PendingApprovals() {

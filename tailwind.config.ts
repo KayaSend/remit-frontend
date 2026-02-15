@@ -78,8 +78,10 @@ const config = {
           electricity: "hsl(var(--category-electricity))",
           water: "hsl(var(--category-water))",
           rent: "hsl(var(--category-rent))",
-          school: "hsl(var(--category-school))",
           food: "hsl(var(--category-food))",
+          medical: "hsl(var(--category-medical))",
+          education: "hsl(var(--category-education))",
+          other: "hsl(var(--category-other))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

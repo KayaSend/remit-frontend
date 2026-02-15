@@ -1,4 +1,4 @@
-import { Zap, Droplets, Home, GraduationCap, ShoppingCart } from 'lucide-react';
+import { Zap, Droplets, Home, GraduationCap, ShoppingCart, Heart, Package } from 'lucide-react';
 import type { Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
 
@@ -8,28 +8,34 @@ interface CategoryIconProps {
   className?: string;
 }
 
-const iconMap = {
+const iconMap: Record<Category, typeof Zap> = {
   electricity: Zap,
   water: Droplets,
   rent: Home,
-  school: GraduationCap,
   food: ShoppingCart,
+  medical: Heart,
+  education: GraduationCap,
+  other: Package,
 };
 
 const colorMap: Record<Category, string> = {
   electricity: 'text-category-electricity',
   water: 'text-category-water',
   rent: 'text-category-rent',
-  school: 'text-category-school',
   food: 'text-category-food',
+  medical: 'text-category-medical',
+  education: 'text-category-education',
+  other: 'text-category-other',
 };
 
 const bgColorMap: Record<Category, string> = {
   electricity: 'bg-category-electricity/10',
   water: 'bg-category-water/10',
   rent: 'bg-category-rent/10',
-  school: 'bg-category-school/10',
   food: 'bg-category-food/10',
+  medical: 'bg-category-medical/10',
+  education: 'bg-category-education/10',
+  other: 'bg-category-other/10',
 };
 
 export function CategoryIcon({ category, size = 20, className }: CategoryIconProps) {

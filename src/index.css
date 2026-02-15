@@ -68,8 +68,10 @@
     --category-electricity: 38 92% 50%;
     --category-water: 200 80% 50%;
     --category-rent: 280 60% 55%;
-    --category-school: var(--hue) var(--sat) var(--lig);
     --category-food: 15 80% 55%;
+    --category-medical: 350 70% 50%;
+    --category-education: var(--hue) var(--sat) var(--lig);
+    --category-other: 215 20% 55%;
 
     /* Sidebar tokens */
     --sidebar-background: 0 0% 98%;
@@ -360,12 +362,20 @@
     @apply bg-[hsl(var(--category-rent))];
   }
   
-  .category-school {
-    @apply bg-[hsl(var(--category-school))];
-  }
-  
   .category-food {
     @apply bg-[hsl(var(--category-food))];
+  }
+
+  .category-medical {
+    @apply bg-[hsl(var(--category-medical))];
+  }
+  
+  .category-education {
+    @apply bg-[hsl(var(--category-education))];
+  }
+  
+  .category-other {
+    @apply bg-[hsl(var(--category-other))];
   }
 
   /* Summary card with gradient */

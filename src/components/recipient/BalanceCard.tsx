@@ -13,13 +13,15 @@ const categoryColorMap: Record<string, string> = {
   electricity: 'bg-category-electricity',
   water: 'bg-category-water',
   rent: 'bg-category-rent',
-  school: 'bg-category-school',
   food: 'bg-category-food',
+  medical: 'bg-category-medical',
+  education: 'bg-category-education',
+  other: 'bg-category-other',
 };
 
 export function BalanceCard({ balance, onClick }: BalanceCardProps) {
-  // One-time payment categories (rent, school) don't have daily limits
-  const isOneTimePayment = balance.category === 'rent' || balance.category === 'school';
+  // One-time payment categories (rent, education) don't have daily limits
+  const isOneTimePayment = balance.category === 'rent' || balance.category === 'education';
   
   const dailyRemaining = balance.dailyLimitKES && !isOneTimePayment
     ? balance.dailyLimitKES - balance.dailySpentKES 
@@ -97,7 +99,7 @@ export function BalanceCard({ balance, onClick }: BalanceCardProps) {
           </div>
         )}
 
-        {/* One-time payment indicator for rent/school */}
+        {/* One-time payment indicator for rent/education */}
         {isOneTimePayment && balance.isActive && (
           <div className="bg-primary/10 rounded-lg p-3">
             <span className="text-smaller text-primary font-medium">
