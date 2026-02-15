@@ -1,12 +1,17 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, Home, Receipt, XCircle, RotateCcw } from 'lucide-react';
+import { CheckCircle, Clock, Home, Receipt, XCircle, RotateCcw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CATEGORY_LABELS, type Category } from '@/types/remittance';
 import { usePaymentRequest } from '@/hooks/usePaymentRequests';
+import { useAutoOfframp } from '@/hooks/useAutoOfframp';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { PaymentRequestStatus } from '@/types/api';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { initiateOfframp } from '@/services/offramp';
 
 type Status = 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'rejected';
 
@@ -36,7 +41,7 @@ const statusConfig: Record<Status, {
   processing: {
     icon: Clock,
     title: 'Sending Payment',
-    description: 'M-Pesa payment in progress...',
+    description: 'Processing M-Pesa transfer to your phone...',
     color: 'text-warning',
     bg: 'bg-warning/10',
   },
@@ -85,12 +90,16 @@ function toUiStatus(apiStatus?: PaymentRequestStatus | string): Status {
 export default function PaymentStatus() {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [showPhoneError, setShowPhoneError] = useState(false);
+  const [showRetryButton, setShowRetryButton] = useState(false);
   
-  const { paymentRequestId, category, amountKES, accountNumber } = (location.state || {}) as {
+  const { paymentRequestId, category, amountKES, accountNumber, recipientPhone } = (location.state || {}) as {
     paymentRequestId?: string;
     category?: Category;
     amountKES?: number;
     accountNumber?: string;
+    recipientPhone?: string;
   };
 
   // Poll payment status every 3 seconds until a terminal status is reached
@@ -102,6 +111,50 @@ export default function PaymentStatus() {
   const apiStatus = paymentData?.data?.status;
   const status = toUiStatus(apiStatus);
   const transactionHash = paymentData?.data?.transaction_hash;
+
+  // Manual retry mutation
+  const manualRetryMutation = useMutation({
+    mutationFn: () => {
+      if (!paymentData?.data || !recipientPhone || !amountKES) {
+        throw new Error('Missing required data for retry');
+      }
+      return initiateOfframp(
+        paymentData.data.payment_request_id,
+        recipientPhone,
+        amountKES,
+        paymentData.data.transaction_hash || ''
+      );
+    },
+    onSuccess: (data) => {
+      toast.success(`M-Pesa payment initiated! Code: ${data.transactionCode}`);
+      queryClient.invalidateQueries({ queryKey: ['payment-request'] });
+      setShowRetryButton(false);
+    },
+    onError: (error: Error) => {
+      toast.error(`Retry failed: ${error.message}. Please contact support.`);
+    },
+  });
+
+  // Auto-trigger M-Pesa disbursement when onchain status is ready
+  const { isTriggering, error: autoOfframpError } = useAutoOfframp({
+    paymentData: paymentData?.data,
+    recipientPhone,
+    amountKes: amountKES,
+    onSuccess: (transactionCode) => {
+      toast.success(`M-Pesa payment initiated! Code: ${transactionCode}`);
+      setShowPhoneError(false);
+      setShowRetryButton(false);
+    },
+    onError: (error) => {
+      if (error.message === 'RECIPIENT_PHONE_MISSING') {
+        setShowPhoneError(true);
+        // Don't show retry button if phone is missing - they need to navigate back
+      } else {
+        toast.error(`Auto-disbursement failed: ${error.message}`);
+        setShowRetryButton(true);
+      }
+    },
+  });
 
   if (!category || !paymentRequestId) {
     return (
@@ -174,6 +227,81 @@ export default function PaymentStatus() {
             )}
           </CardContent>
         </Card>
+
+        {/* Auto-disbursement notification */}
+        {isTriggering && (
+          <Card className="card-elevated mb-6 border-primary animate-fade-in">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">Initiating M-Pesa Transfer</p>
+                  <p className="text-sm text-muted-foreground">Sending payment to your phone automatically...</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Missing phone error notification */}
+        {showPhoneError && !recipientPhone && (
+          <Card className="card-elevated mb-6 border-destructive animate-fade-in">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-destructive mb-1">Payment Information Missing</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    We need your phone number to complete the M-Pesa transfer. This usually happens after a page refresh.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate('/recipient/request')}
+                    className="border-destructive text-destructive hover:bg-destructive/10"
+                  >
+                    Return to Request Payment
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manual retry option for failed auto-disbursement */}
+        {showRetryButton && recipientPhone && paymentData?.data?.onchain_status === 'onchain_done_offramp_pending' && (
+          <Card className="card-elevated mb-6 border-warning animate-fade-in">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground mb-1">Automatic Transfer Failed</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    The automatic M-Pesa transfer encountered an issue. You can try again manually.
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={() => manualRetryMutation.mutate()}
+                    disabled={manualRetryMutation.isPending}
+                    className="gap-2"
+                  >
+                    {manualRetryMutation.isPending ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Retrying...
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="w-4 h-4" />
+                        Retry M-Pesa Transfer
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Progress Steps */}
         <div className="space-y-4 mb-8">

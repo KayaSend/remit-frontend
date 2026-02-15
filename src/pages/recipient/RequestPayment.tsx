@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { useRecipientBalances } from '@/hooks/useRecipients';
+import { useRecipientBalances, useRecipientDashboard } from '@/hooks/useRecipients';
 import { useCreatePaymentRequest } from '@/hooks/usePaymentRequests';
 import { CATEGORY_LABELS, USD_TO_KES, type Category } from '@/types/remittance';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ const categoryColorMap: Record<Category, string> = {
 export default function RequestPayment() {
   const navigate = useNavigate();
   const { data: balances } = useRecipientBalances();
+  const { data: dashboard } = useRecipientDashboard();
   const createPaymentRequest = useCreatePaymentRequest();
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -95,10 +96,12 @@ export default function RequestPayment() {
           category: selectedCategory,
           amountKES: amountNum,
           accountNumber,
+          recipientPhone: dashboard?.recipient.phone,
         },
       });
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to submit payment request');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to submit payment request';
+      toast.error(message);
     }
   };
 
