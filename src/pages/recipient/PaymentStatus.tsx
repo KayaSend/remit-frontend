@@ -26,8 +26,8 @@ const statusConfig: Record<Status, {
 }> = {
   pending: {
     icon: Clock,
-    title: 'Awaiting Approval',
-    description: 'Your sender will review this request',
+    title: 'Processing Request',
+    description: 'Your payment is being prepared',
     color: 'text-pending',
     bg: 'bg-pending/10',
   },
@@ -40,8 +40,8 @@ const statusConfig: Record<Status, {
   },
   processing: {
     icon: Clock,
-    title: 'Sending Payment',
-    description: 'Processing M-Pesa transfer to your phone...',
+    title: 'Sending M-Pesa Payment',
+    description: 'Processing M-Pesa transfer to the merchant...',
     color: 'text-warning',
     bg: 'bg-warning/10',
   },
@@ -324,8 +324,8 @@ export default function PaymentStatus() {
 
         {/* Progress Steps */}
         <div className="space-y-4 mb-8">
-          {(['pending', 'approved', 'processing', 'completed'] as Status[]).map((s, i) => {
-            const progressOrder = ['pending', 'approved', 'processing', 'completed'];
+          {(['pending', 'processing', 'completed'] as Status[]).map((s, i) => {
+            const progressOrder = ['pending', 'processing', 'completed'];
             const currentIdx = progressOrder.indexOf(status);
             const isTerminalError = status === 'failed' || status === 'rejected';
             // For failed/rejected, figure out which step the error maps to
@@ -414,7 +414,7 @@ export default function PaymentStatus() {
               <Card className="card-elevated mb-4">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground text-center">
-                    Your request is waiting for your sender to approve it. You can leave this page and check back later.
+                    Your payment is being processed. You can leave this page and check back later.
                   </p>
                 </CardContent>
               </Card>
