@@ -73,7 +73,7 @@ export default function RequestPayment() {
   const canProceed = () => {
     switch (step) {
       case 0: return selectedCategory !== null;
-      case 1: return amountNum > 0 && !exceedsDaily && !exceedsTotal;
+      case 1: return amountNum >= 20 && !exceedsDaily && !exceedsTotal;
       case 2: return accountNumber.length >= 3;
       case 3: return true;
       default: return false;
@@ -278,6 +278,15 @@ export default function RequestPayment() {
                         You can request the full amount at once
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {amountNum > 0 && amountNum < 20 && (
+                  <div className="flex items-start gap-3 mt-2 p-4 rounded-xl bg-destructive/10">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-destructive" />
+                    <p className="text-small text-destructive font-medium">
+                      Minimum M-Pesa payment is KES 20
+                    </p>
                   </div>
                 )}
 
