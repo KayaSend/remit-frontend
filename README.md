@@ -1,73 +1,131 @@
-# Welcome to your Lovable project
+# Kindred Flow
 
-## Project info
+A modern remittance platform enabling category-based money transfers with real-time payment tracking and M-Pesa integration.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## The Problem
 
-## How can I edit this code?
+Traditional remittance services lack transparency and control. Senders have no visibility into how their money is spent, and recipients face delays in accessing funds. The process is often opaque, with limited tracking and no way to ensure funds are used for their intended purposes.
 
-There are several ways of editing your application.
+## The Solution
 
-**Use Lovable**
+Kindred Flow solves these challenges by introducing:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Category-Based Escrow**: Senders allocate funds to specific categories (e.g., food, rent, education, healthcare)
+- **Real-Time Transparency**: Both parties can track spending and balances in real-time
+- **Controlled Disbursement**: Recipients request payments against specific categories with daily limits
+- **Instant Settlement**: M-Pesa integration enables fast on-ramp (funding) and off-ramp (disbursement)
+- **Blockchain Backend**: Secure, transparent transactions powered by blockchain technology
 
-Changes made via Lovable will be committed automatically to this repo.
+## User Flow
 
-**Use your preferred IDE**
+### Sender Flow
+1. **Authentication**: Sign in using Privy authentication
+2. **Create Remittance**: 
+   - Enter recipient phone number and name
+   - Allocate amounts to categories (food, rent, education, healthcare, utilities, transport, other)
+   - Set daily spending limits per category
+   - Review and confirm total amount
+3. **Fund Escrow**: Complete M-Pesa STK push payment to fund the escrow
+4. **Monitor**: Track recipient's spending in real-time via dashboard
+5. **View History**: Access complete transaction history and remittance details
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Recipient Flow
+1. **Authentication**: Log in with phone number via OTP verification
+2. **View Dashboard**: See available balances per category and daily spending limits
+3. **Request Payment**: 
+   - Select category (e.g., food, rent)
+   - Enter amount within available balance and daily limit
+   - Add optional note/description
+   - Submit payment request
+4. **Track Status**: Monitor payment progress through multiple stages:
+   - Pending approval
+   - On-chain processing
+   - Off-ramp initiated
+   - M-Pesa confirmation received
+5. **Receive Funds**: Get instant M-Pesa payment notification
+6. **View History**: Access all past payment requests and transactions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Payment Lifecycle
+```
+Create Request → Blockchain Processing → Off-Ramp Initiated → M-Pesa Sent → Completed
+```
 
-Follow these steps:
+## Technologies Used
+
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Components**: shadcn-ui, Radix UI, Tailwind CSS
+- **Authentication**: Privy (Web3 authentication)
+- **State Management**: TanStack React Query
+- **API Integration**: Supabase, KayaSend API
+- **Payment Gateway**: M-Pesa (Kenya)
+- **Animations**: Framer Motion
+- **Charts**: Recharts
+- **Form Handling**: React Hook Form, Zod validation
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher) - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- npm or yarn package manager
+
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd kindred-flow
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env.local` file in the root directory with the following variables:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_key
+VITE_PRIVY_APP_ID=your_privy_app_id
+VITE_API_BASE_URL=your_api_base_url
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Available Scripts
 
-## What technologies are used for this project?
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build for development environment
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+src/
+├── components/     # Reusable UI components
+├── pages/          # Page components
+│   ├── sender/     # Sender-related pages
+│   └── recipient/  # Recipient-related pages
+├── hooks/          # Custom React hooks
+├── lib/            # Utility functions and helpers
+├── services/       # API service layer
+├── types/          # TypeScript type definitions
+└── integrations/   # Third-party integrations
+```
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+This project can be deployed to any static hosting service:
 
-## Can I connect a custom domain to my Lovable project?
+- **Vercel**: Connect your GitHub repository and deploy automatically
+- **Netlify**: Import project from Git and deploy
+- **GitHub Pages**: Use GitHub Actions for automated deployment
 
-Yes, you can!
+## License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is private and proprietary.
