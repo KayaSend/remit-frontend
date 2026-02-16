@@ -406,6 +406,29 @@ export default function PaymentStatus() {
             </Button>
           </div>
         )}
+
+        {/* Navigation for non-terminal states (pending/approved/processing) */}
+        {!TERMINAL_STATUSES.includes(status) && (
+          <div className="space-y-3 animate-fade-in">
+            {status === 'pending' && (
+              <Card className="card-elevated mb-4">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Your sender has been notified. You can leave this page — we'll update the status automatically when they respond.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            <Button
+              variant="outline"
+              className="w-full h-12"
+              onClick={() => navigate('/recipient')}
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
