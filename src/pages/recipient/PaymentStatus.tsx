@@ -74,6 +74,8 @@ function toUiStatus(apiStatus?: PaymentRequestStatus | string): Status {
     case 'completed':
       return 'completed';
     case 'processing':
+    case 'onchain_done_offramp_pending':
+    case 'onchain_pending':
       return 'processing';
     case 'approved':
       return 'approved';
