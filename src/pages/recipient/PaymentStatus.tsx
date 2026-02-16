@@ -414,7 +414,7 @@ export default function PaymentStatus() {
               <Card className="card-elevated mb-4">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground text-center">
-                    Your sender has been notified. You can leave this page — we'll update the status automatically when they respond.
+                    Your request is waiting for your sender to approve it. You can leave this page and check back later.
                   </p>
                 </CardContent>
               </Card>
